@@ -3,13 +3,21 @@ import {
   appendHistory,
   classify,
   dayState,
+  daysWithChecks,
+  describeDay,
+  durationText,
   emptyHistory,
+  formatUptime,
+  listOf,
   overall,
+  overallDetail,
   parseIncident,
   prune,
+  sinceText,
   sortIncidents,
   uptimeOf,
   type Sample,
+  type State,
 } from "./lib.mjs";
 
 /** The rules the status page lives by (status/README.md). */
@@ -101,6 +109,72 @@ describe("history", () => {
     expect(dayState({ checks: 4, up: 4, degraded: 0, down: 0 })).toBe("up");
     expect(dayState({ checks: 4, up: 3, degraded: 1, down: 0 })).toBe("degraded");
     expect(dayState({ checks: 4, up: 3, degraded: 0, down: 1 })).toBe("down");
+  });
+
+  it("counts the days an uptime figure stands on, inside its window only", () => {
+    let h = appendHistory(emptyHistory(), status("up", "2026-10-01T10:00:00Z"));
+    h = appendHistory(h, status("down", "2026-10-19T10:00:00Z"));
+    h = appendHistory(h, status("up", "2026-10-20T10:00:00Z"));
+    expect(daysWithChecks(h, "website", 90, "2026-10-20T12:00:00Z")).toBe(3);
+    expect(daysWithChecks(h, "website", 2, "2026-10-20T12:00:00Z")).toBe(2);
+    expect(daysWithChecks(h, "later", 90, "2026-10-20T12:00:00Z")).toBe(0);
+  });
+});
+
+describe("the page's words", () => {
+  it("never rounds an uptime up to 100%", () => {
+    expect(formatUptime(1)).toBe("100%");
+    expect(formatUptime(1 - 1 / 100_000)).toBe("99.99%");
+    expect(formatUptime(29 / 100)).toBe("29.00%");
+    expect(formatUptime(0.75)).toBe("75.00%");
+    expect(formatUptime(null)).toBeNull();
+  });
+
+  it("says what one component's day held", () => {
+    expect(describeDay(undefined)).toBe("No checks");
+    expect(describeDay({ checks: 1, up: 1, degraded: 0, down: 0 })).toBe("1 check, up");
+    expect(describeDay({ checks: 1, up: 0, degraded: 0, down: 1 })).toBe("1 check, down");
+    expect(describeDay({ checks: 6, up: 6, degraded: 0, down: 0 })).toBe("6 checks, all up");
+    expect(describeDay({ checks: 6, up: 3, degraded: 2, down: 1 })).toBe("6 checks: 1 down, 2 degraded");
+  });
+
+  it("says how long ago a check ran, coarsely", () => {
+    const at = "2026-11-01T03:55:00Z";
+    expect(sinceText(at, Date.parse("2026-11-01T03:55:40Z"))).toBe("just now");
+    expect(sinceText(at, Date.parse("2026-11-01T04:07:00Z"))).toBe("12 min ago");
+    expect(sinceText(at, Date.parse("2026-11-01T04:55:00Z"))).toBe("1 hour ago");
+    expect(sinceText(at, Date.parse("2026-11-01T08:10:00Z"))).toBe("4 hours ago");
+    expect(sinceText(at, Date.parse("2026-11-03T04:00:00Z"))).toBe("2 days ago");
+    // A reader's clock behind the check's.
+    expect(sinceText(at, Date.parse("2026-11-01T03:50:00Z"))).toBe("just now");
+    expect(sinceText("not a time", Date.parse("2026-11-01T03:50:00Z"))).toBeNull();
+  });
+
+  it("says how long an incident lasted", () => {
+    expect(durationText("2026-10-19T10:00:00+05:30", "2026-10-19T10:40:00+05:30")).toBe("40 min");
+    expect(durationText("2026-10-19T10:00:00Z", "2026-10-19T12:05:00Z")).toBe("2 hours 5 min");
+    expect(durationText("2026-10-19T10:00:00Z", "2026-10-19T11:00:00Z")).toBe("1 hour");
+    expect(durationText("2026-10-19T10:00:00Z", "2026-10-20T13:00:00Z")).toBe("1 day 3 hours");
+  });
+
+  it("lists names as a reader would", () => {
+    expect(listOf([])).toBe("");
+    expect(listOf(["a"])).toBe("a");
+    expect(listOf(["a", "b"])).toBe("a and b");
+    expect(listOf(["a", "b", "c"])).toBe("a, b and c");
+  });
+
+  it("names what is not normal in the banner's second line, and leaves the not-yet-live out", () => {
+    const c = (name: string, state: State) => ({ name, state });
+    expect(overallDetail([c("earnd.life", "up"), c("Waitlist", "up"), c("later", "disabled")])).toBe(
+      "Both components answered normally.",
+    );
+    expect(overallDetail([c("a", "up"), c("b", "up"), c("c", "up")])).toBe("All 3 components answered normally.");
+    expect(overallDetail([c("earnd.life", "up")])).toBe("earnd.life answered normally.");
+    expect(overallDetail([c("earnd.life", "degraded"), c("Waitlist", "down"), c("x", "down")])).toBe(
+      "Waitlist and x are down. earnd.life is degraded.",
+    );
+    expect(overallDetail([c("later", "disabled")])).toBe("No check has run yet.");
   });
 });
 

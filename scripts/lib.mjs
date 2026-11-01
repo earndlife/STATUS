@@ -1,6 +1,7 @@
 // The status page's logic with nothing async in it: how samples become a state, how a day's
-// history accumulates, what an uptime figure is, and how an incident file is read. probe.mjs and
-// build.mjs are the thin CLIs around it; lib.test.ts (run by the website's vitest) pins the rules.
+// history accumulates, what an uptime figure is, how an incident file is read, and the words the
+// page shows. probe.mjs and build.mjs are the thin CLIs around it and index.html imports it as a
+// module; lib.test.ts (run by the website's vitest) pins the rules.
 
 /** How a component ended up after its samples. */
 export const STATES = ["up", "degraded", "down", "disabled"];
@@ -101,9 +102,82 @@ export function dayState(counters) {
   return "up";
 }
 
+/** How many of the last `days` days have a check of `id`: the span an uptime figure stands on. */
+export function daysWithChecks(history, id, days, now) {
+  const cutoff = utcDay(new Date(new Date(now).getTime() - (days - 1) * 86_400_000));
+  return Object.entries(history?.days ?? {}).filter(([day, byId]) => day >= cutoff && (byId[id]?.checks ?? 0) > 0).length;
+}
+
+// ── The page's words ───────────────────────────────────────────────────────
+// index.html imports this file as a module (build.mjs copies it beside the page), so what a
+// reader is told is pinned here by lib.test.ts rather than written into the page's script.
+
+/**
+ * An uptime share as a reader sees it: "100%" only when no check was down, otherwise two
+ * decimals rounded down, so one failed check in thousands reads 99.99% and never 100%.
+ */
+export function formatUptime(share) {
+  if (share === null || share === undefined || !Number.isFinite(share)) return null;
+  if (share >= 1) return "100%";
+  // The epsilon undoes binary fractions (0.29 * 10000 is 2899.99...); a real shortfall is far larger.
+  return `${(Math.floor(share * 10_000 + 1e-6) / 100).toFixed(2)}%`;
+}
+
+/** One component's day in words, for the strip: "6 checks, all up", "6 checks: 1 down, 2 degraded". */
+export function describeDay(counters) {
+  if (!counters || !counters.checks) return "No checks";
+  if (counters.checks === 1) return `1 check, ${counters.down ? "down" : counters.degraded ? "degraded" : "up"}`;
+  const problems = [counters.down && `${counters.down} down`, counters.degraded && `${counters.degraded} degraded`].filter(Boolean);
+  return `${counters.checks} checks${problems.length ? `: ${problems.join(", ")}` : ", all up"}`;
+}
+
+/** How long ago an instant was, coarsely: "just now", "12 min ago", "3 hours ago", "2 days ago". */
+export function sinceText(at, now = Date.now()) {
+  const minutes = Math.floor((new Date(now).getTime() - new Date(at).getTime()) / 60_000);
+  if (Number.isNaN(minutes)) return null;
+  // A reader's clock a little behind the check's reads "just now", never a time to come.
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} ${days === 1 ? "day" : "days"} ago`;
+}
+
+/** How long an incident lasted: "40 min", "2 hours 5 min", "1 day 3 hours". */
+export function durationText(fromAt, toAt) {
+  const minutes = Math.max(0, Math.round((new Date(toAt).getTime() - new Date(fromAt).getTime()) / 60_000));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"}${minutes % 60 ? ` ${minutes % 60} min` : ""}`;
+  const days = Math.floor(hours / 24);
+  return `${days} ${days === 1 ? "day" : "days"}${hours % 24 ? ` ${hours % 24} ${hours % 24 === 1 ? "hour" : "hours"}` : ""}`;
+}
+
+/** Names as a reader lists them: "a", "a and b", "a, b and c". */
+export function listOf(names) {
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/** The banner's second line: what is not normal, by name, or that everything answered. */
+export function overallDetail(components) {
+  const live = components.filter((c) => c.state !== "disabled");
+  if (live.length === 0) return "No check has run yet.";
+  const lines = [];
+  for (const state of ["down", "degraded"]) {
+    const names = live.filter((c) => c.state === state).map((c) => c.name);
+    if (names.length) lines.push(`${listOf(names)} ${names.length === 1 ? "is" : "are"} ${state}.`);
+  }
+  if (lines.length) return lines.join(" ");
+  if (live.length === 1) return `${live[0].name} answered normally.`;
+  return `${live.length === 2 ? "Both" : `All ${live.length}`} components answered normally.`;
+}
+
 // ── Incidents ──────────────────────────────────────────────────────────────
 // A markdown file per incident, with a small front matter. Written by a person, by hand, in
-// the public repository; the next run publishes it. Nothing here parses YAML in general: a
+// the public repository, which keeps it (publish.sh never deletes or rewrites one); the push to
+// main runs the workflow, which publishes it. Nothing here parses YAML in general: a
 // `key: value` line per field is all an incident needs.
 export const INCIDENT_STATUSES = ["investigating", "identified", "monitoring", "resolved"];
 

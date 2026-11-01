@@ -1,6 +1,8 @@
 # The status page: probe, keep the history, publish to GitHub Pages. Runs in the PUBLIC
-# `earndlife/status` repository, which is this folder mirrored (status/publish.sh), so its minutes
-# are free and the page is served by GitHub, away from Earnd's own box.
+# `earndlife/STATUS` repository, which is this folder as published (status/publish.sh) plus the
+# incidents written there, so its minutes are free and the page is served by GitHub, away from
+# Earnd's own box. GitHub runs the schedule late when it is busy (status/README.md, "How often it
+# runs"); a push to main, a publish or an incident, runs it at once.
 #
 # History lives on the `data` branch, one small JSON file rewritten each run, so `main` holds only
 # the page and its scripts. Pages is deployed from the artifact, never from a branch.

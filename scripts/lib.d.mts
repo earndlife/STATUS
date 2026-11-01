@@ -71,6 +71,13 @@ export function appendHistory(history: History | null | undefined, status: Statu
 export function prune(history: History, now: string | number | Date, keepDays?: number): History;
 export function uptimeOf(history: History, id: string, days: number, now: string | number | Date): number | null;
 export function dayState(counters: DayCounters | undefined): "none" | "up" | "degraded" | "down";
+export function daysWithChecks(history: History, id: string, days: number, now: string | number | Date): number;
+export function formatUptime(share: number | null | undefined): string | null;
+export function describeDay(counters: DayCounters | undefined): string;
+export function sinceText(at: string | number | Date, now?: string | number | Date): string | null;
+export function durationText(fromAt: string | number | Date, toAt: string | number | Date): string;
+export function listOf(names: readonly string[]): string;
+export function overallDetail(components: Pick<ComponentStatus, "name" | "state">[]): string;
 export function parseFrontMatter(text: string): { fields: Record<string, string>; body: string };
 export function parseIncident(slug: string, text: string): { incident: Incident | null; problems: string[] };
 export function sortIncidents(list: Incident[]): Incident[];

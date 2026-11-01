@@ -3,129 +3,1827 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnd status</title>
-<meta name="description" content="Whether earnd.life and the Earnd waitlist are up, checked every 30 minutes from outside Earnd's own servers, with 90 days of history and every incident.">
+<title>Status · Earnd</title>
+<meta name="description" content="Whether earnd.life and the Earnd waitlist are up, checked from GitHub's servers away from Earnd's own, with 90 days of history and every incident.">
+<meta name="theme-color" content="#0B0B0C">
 <meta name="color-scheme" content="dark">
-<link rel="icon" href="assets/earnd-mark-on-dark.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Earnd">
+<meta property="og:title" content="Status · Earnd">
+<meta property="og:description" content="Whether earnd.life and the Earnd waitlist are up, with 90 days of history and every incident.">
+<!-- The tab, the home screen: the site's own files (content/brand-files.test.ts holds them to the logo folder). -->
+<link rel="icon" href="assets/favicon.ico" sizes="48x48" type="image/x-icon">
+<link rel="icon" href="assets/icon.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-icon.png" sizes="180x180" type="image/png">
+<link rel="preload" href="assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Before the first paint, as the site's head script does: where no script runs, the header's bar is the card from the start. -->
+<script>document.documentElement.dataset.js = "";</script>
 <style>
-  :root {
-    --ink: #0b0b0c; --card: #141416; --hair: #303032; --paper: #f2f2ee; --text: #b4b4b8; --muted: #8a8a90;
-    --emerald: #10b981; --amber: #f59e0b; --red: #ef4444; --slate: #3f3f46;
+  /*
+   * The look of earnd.life, carried here rather than loaded from it: this page has to stand when
+   * the site does not, so it asks nothing of earnd.life. The tokens are the site's
+   * (lib/design-tokens.ts, value for value; content/status-page.test.ts holds them), the pieces
+   * are its own (the lockup, the reading title, the numbered sections, the pill family, the
+   * footer's wordmark: the site's stylesheets), and so are the fonts (the variable Manrope and Space
+   * Grotesk, OFL, in assets/fonts with their licences).
+   */
+  @font-face {
+    font-family: "Manrope";
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url("assets/fonts/manrope-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--ink); color: var(--text); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  a { color: var(--paper); }
-  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
-  header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
-  header img { width: 30px; height: 36px; }
-  header .word { color: var(--paper); font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
-  header .word span { color: var(--muted); font-weight: 500; margin-left: 8px; }
-  .banner { border-radius: 16px; padding: 18px 20px; border: 1px solid var(--hair); background: var(--card); display: flex; justify-content: space-between; gap: 16px; align-items: center; flex-wrap: wrap; }
-  .banner h1 { margin: 0; font-size: 22px; color: var(--paper); letter-spacing: -0.02em; }
-  .banner .when { color: var(--muted); font-size: 13px; }
-  .banner.up h1::before, .banner.degraded h1::before, .banner.down h1::before, .banner.unknown h1::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; vertical-align: 1px; background: var(--slate); }
-  .banner.up h1::before { background: var(--emerald); }
-  .banner.degraded h1::before { background: var(--amber); }
-  .banner.down h1::before { background: var(--red); }
-  section { margin-top: 28px; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
-  .component { border: 1px solid var(--hair); background: var(--card); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
-  .row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-  .name { color: var(--paper); font-weight: 600; }
-  .desc { color: var(--muted); font-size: 14px; margin-top: 2px; }
-  .pill { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--hair); white-space: nowrap; }
-  .pill.up { color: #34d399; border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.1); }
-  .pill.degraded { color: #fbbf24; border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.1); }
-  .pill.down { color: #f87171; border-color: rgba(239,68,68,.4); background: rgba(239,68,68,.1); }
-  .pill.disabled { color: var(--muted); }
-  .meta { color: var(--muted); font-size: 13px; margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; }
-  .strip { display: grid; grid-template-columns: repeat(90, 1fr); gap: 2px; margin-top: 12px; }
-  .day { height: 22px; border-radius: 2px; background: var(--slate); }
-  .day.up { background: var(--emerald); } .day.degraded { background: var(--amber); } .day.down { background: var(--red); }
-  .legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 6px; }
-  .incident { border-left: 2px solid var(--hair); padding: 2px 0 2px 16px; margin-bottom: 18px; }
-  .incident.open { border-left-color: var(--amber); }
-  .incident .title { color: var(--paper); font-weight: 600; }
-  .incident .when { color: var(--muted); font-size: 13px; }
-  .incident .body { white-space: pre-wrap; margin-top: 6px; font-size: 15px; }
-  footer { margin-top: 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--hair); padding-top: 18px; }
-  .empty { color: var(--muted); }
-  noscript p { color: var(--muted); }
+
+  @font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: swap;
+    src: url("assets/fonts/space-grotesk-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  /* Registered so they glide: a pill's edge and halo, the wordmark's light, the button's beam (pills.css, chrome.css, fx.css). */
+  @property --pill-lit { syntax: "<number>"; inherits: true; initial-value: 1; }
+  @property --pill-glow { syntax: "<number>"; inherits: true; initial-value: 0; }
+  @property --chrome-sweep-x { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
+  @property --chrome-sweep-on { syntax: "<number>"; inherits: true; initial-value: 0; }
+  @property --fx-beam-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  @property --fx-beam-boost { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  @property --fx-beam-rest { syntax: "<color>"; inherits: false; initial-value: transparent; }
+
+  :root {
+    color-scheme: dark;
+    --font-manrope: "Manrope";
+    --font-space-grotesk: "Space Grotesk";
+    --ds-color-background: #0B0B0C;
+    --ds-color-card: #141416;
+    --ds-color-surface-elevated: #1C1C1F;
+    --ds-color-surface-overlay: #26262A;
+    --ds-color-border: rgba(255, 255, 255, 0.12);
+    --ds-color-border-strong: rgba(255, 255, 255, 0.24);
+    --ds-color-text-primary: #FAFAFA;
+    --ds-color-text-secondary: #B4B4B8;
+    --ds-color-text-muted: #7A7A80;
+    --ds-color-on-primary: #0B0B0C;
+    --ds-color-primary: #10B981;
+    --ds-color-primary-dim: #0E9E70;
+    --ds-color-accent-mint: #34D399;
+    --ds-color-accent-lime: #A9D419;
+    --ds-color-success: #2BB765;
+    --ds-color-warning: #E09A12;
+    --ds-color-danger: #F04438;
+    --ds-color-control-wash: rgba(255, 255, 255, 0.09);
+    --ds-color-paper: #F2F2EE;
+    --ds-color-brand-start: #10B981;
+    --ds-color-brand-mid: #34D399;
+    --ds-color-brand-end: #A9D419;
+    --ds-gradient-brand: linear-gradient(90deg, var(--ds-color-brand-start), var(--ds-color-brand-mid), var(--ds-color-brand-end));
+    --ds-color-aurora-emerald: #0E9E70;
+    --ds-color-aurora-blue: #22366E;
+    --ds-color-glow-primary: rgba(16, 185, 129, 0.45);
+    --ds-color-beam-head: #34D399;
+    --ds-color-beam-hot: #A9D419;
+    --ds-color-beam-tail: rgba(16, 185, 129, 0);
+    --ds-grain-opacity-lite: 0.05;
+    --ds-space-2xs: 2px;
+    --ds-space-xs: 4px;
+    --ds-space-sm: 10px;
+    --ds-space-md: 16px;
+    --ds-space-lg: 22px;
+    --ds-space-xl: 28px;
+    --ds-space-2xl: 36px;
+    --ds-space-3xl: 48px;
+    --ds-radius-sm: 2px;
+    --ds-radius-lg: 6px;
+    --ds-radius-card: 8px;
+    --ds-radius-control: 4px;
+    --ds-radius-pill: 999px;
+    --ds-font-size-xs: 11px;
+    --ds-font-size-sm: 13px;
+    --ds-font-size-base: 16px;
+    --ds-font-size-md: 17px;
+    --ds-font-size-lg: 20px;
+    --ds-font-size-xl: 23px;
+    --ds-font-size-2xl: 28px;
+    --ds-font-size-3xl: 36px;
+    --ds-font-size-4xl: 44px;
+    --ds-line-height-xs: 16px;
+    --ds-line-height-sm: 19px;
+    --ds-line-height-base: 24px;
+    --ds-line-height-md: 26px;
+    --ds-line-height-lg: 30px;
+    --ds-line-height-xl: 32px;
+    --ds-line-height-3xl: 42px;
+    --ds-line-height-4xl: 50px;
+    --ds-font-heading: var(--font-space-grotesk);
+    --ds-font-body: var(--font-manrope);
+    --ds-font-weight-regular: 400;
+    --ds-font-weight-medium: 500;
+    --ds-font-weight-semibold: 600;
+    --ds-font-weight-bold: 700;
+    --ds-motion-fast: 120ms;
+    --ds-motion-base: 180ms;
+    --ds-motion-slow: 260ms;
+    --ds-motion-reveal: 480ms;
+    --ds-motion-draw: 640ms;
+    --ds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ds-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+    --ds-control-height-sm: 40px;
+    --ds-control-padding-sm: 16px;
+    --ds-icon-button-md: 44px;
+    --ds-layout-gutter-mobile: 16px;
+    --ds-layout-gutter-desktop: 28px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    background: var(--ds-color-background);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    color: var(--ds-color-text-primary);
+    font-family: var(--ds-font-body), system-ui, sans-serif;
+    font-size: var(--ds-font-size-base);
+    line-height: var(--ds-line-height-base);
+    font-weight: var(--ds-font-weight-regular);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    margin: 0;
+    font-family: var(--ds-font-heading), system-ui, sans-serif;
+    font-weight: var(--ds-font-weight-semibold);
+    text-wrap: balance;
+  }
+
+  p { margin: 0; text-wrap: pretty; }
+  a { color: inherit; text-decoration: none; }
+  ul, dl, dd { margin: 0; padding: 0; }
+  ul { list-style: none; }
+
+  /* One visible focus treatment, the site's. */
+  :where(a, button, [tabindex]):not([tabindex="-1"]):focus-visible {
+    outline: 2px solid var(--ds-color-accent-mint);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: var(--ds-color-primary);
+    color: var(--ds-color-on-primary);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .skip-link {
+    position: fixed;
+    top: var(--ds-space-sm);
+    left: var(--ds-space-sm);
+    z-index: 100;
+    transform: translateY(-200%);
+    padding: var(--ds-space-xs) var(--ds-space-md);
+    border: 1px solid var(--ds-color-border-strong);
+    border-radius: var(--ds-radius-control);
+    background: var(--ds-color-surface-elevated);
+    color: var(--ds-color-text-primary);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-semibold);
+  }
+
+  .skip-link:focus-visible { transform: translateY(0); }
+
+  /*
+   * The ground: the aurora's opening frame as the site paints it under its stage, by its own
+   * fitted lights (components/shared/ambient/aurora/backdrop.ts) at half their strength, the
+   * reading pages' quiet. Fixed behind the page, one per screen shape.
+   */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(138.2vh 103vh at 18.9% 78.6%,color-mix(in srgb,var(--ds-color-aurora-emerald) 6.7%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 5.6%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 0.4%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 0%,transparent),transparent),radial-gradient(116.5vh 63.6vh at 61.2% -5.1%,color-mix(in srgb,var(--ds-color-aurora-blue) 27.5%,transparent),color-mix(in srgb,var(--ds-color-aurora-blue) 18.6%,transparent),color-mix(in srgb,var(--ds-color-aurora-blue) 4.7%,transparent),color-mix(in srgb,var(--ds-color-aurora-blue) 0.4%,transparent),transparent),radial-gradient(122.5vh 38vh at 62.6% 104.5%,color-mix(in srgb,var(--ds-color-aurora-emerald) 7.3%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 4.9%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 1.3%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 0.1%,transparent),transparent),radial-gradient(96vh 97.2vh at 95.6% 24.9%,color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 28%,var(--ds-color-aurora-emerald)) 13.3%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 28%,var(--ds-color-aurora-emerald)) 10.1%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 28%,var(--ds-color-aurora-emerald)) 1.4%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 28%,var(--ds-color-aurora-emerald)) 0%,transparent),transparent),radial-gradient(200.6vh 116.6vh at -20.2% 93%,color-mix(in srgb,var(--ds-color-aurora-emerald) 14.1%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 10.4%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 1.8%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 0%,transparent),transparent);
+  }
+
+  @media (orientation: portrait) {
+    body::before { background-image: radial-gradient(86.5vh 79.2vh at 16.8% 84.6%,color-mix(in srgb,var(--ds-color-aurora-emerald) 15.7%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 10.9%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 2.5%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 0.1%,transparent),transparent),radial-gradient(72.5vh 32.7vh at 56% 0.6%,color-mix(in srgb,var(--ds-color-aurora-blue) 24.9%,transparent),color-mix(in srgb,var(--ds-color-aurora-blue) 16.8%,transparent),color-mix(in srgb,var(--ds-color-aurora-blue) 4.3%,transparent),color-mix(in srgb,var(--ds-color-aurora-blue) 0.4%,transparent),transparent),radial-gradient(98.8vh 99.1vh at 115.7% 9.9%,color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 36%,var(--ds-color-aurora-emerald)) 15.1%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 36%,var(--ds-color-aurora-emerald)) 12.6%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 36%,var(--ds-color-aurora-emerald)) 0.9%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 36%,var(--ds-color-aurora-emerald)) 0%,transparent),transparent),radial-gradient(300vh 38.4vh at -7.9% 118.4%,color-mix(in srgb,var(--ds-color-aurora-emerald) 22.3%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 13.5%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 4.9%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 1.2%,transparent),transparent); }
+  }
+
+  @media (pointer: coarse) and (orientation: portrait) {
+    body::before { background-image: radial-gradient(66.3vh 61.5vh at 37.6% 85%,color-mix(in srgb,var(--ds-color-aurora-emerald) 16.1%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 11.4%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 2.4%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 0.1%,transparent),transparent),radial-gradient(111.9vh 45.6vh at 126.9% 6.3%,color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 24%,var(--ds-color-aurora-emerald)) 8.9%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 24%,var(--ds-color-aurora-emerald)) 7.4%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 24%,var(--ds-color-aurora-emerald)) 0.5%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 24%,var(--ds-color-aurora-emerald)) 0%,transparent),transparent),radial-gradient(29.5vh 87.4vh at 85.8% 142.4%,color-mix(in srgb,var(--ds-color-aurora-emerald) 27.2%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 16.5%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 5.9%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 1.5%,transparent),transparent),radial-gradient(52.5vh 43.2vh at 119.4% 22%,color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 9.3%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 6.6%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 1.4%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 0%,transparent),transparent); }
+  }
+
+  @media (pointer: coarse) and (orientation: landscape) {
+    body::before { background-image: radial-gradient(107vh 101.3vh at 28.9% 83.4%,color-mix(in srgb,var(--ds-color-aurora-emerald) 11.8%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 9%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 1.3%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 0%,transparent),transparent),radial-gradient(73.6vh 118.4vh at 94.3% 21.2%,color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 12.6%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 9.6%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 1.4%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 25%,var(--ds-color-aurora-emerald)) 0%,transparent),transparent),radial-gradient(115.8vh 77.6vh at -33.1% 91.9%,color-mix(in srgb,var(--ds-color-aurora-emerald) 37.9%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 22.9%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 8.3%,transparent),color-mix(in srgb,var(--ds-color-aurora-emerald) 2.1%,transparent),transparent),radial-gradient(41vh 49.6vh at 66.1% -0.7%,color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 18%,var(--ds-color-aurora-emerald)) 3.6%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 18%,var(--ds-color-aurora-emerald)) 2.6%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 18%,var(--ds-color-aurora-emerald)) 0.5%,transparent),color-mix(in srgb,color-mix(in srgb,var(--ds-color-aurora-blue) 18%,var(--ds-color-aurora-emerald)) 0%,transparent),transparent); }
+  }
+
+  .container {
+    width: 100%;
+    max-width: 64rem;
+    margin-inline: auto;
+    padding-inline: var(--ds-layout-gutter-mobile);
+  }
+
+  @media (min-width: 48rem) {
+    .container { padding-inline: var(--ds-layout-gutter-desktop); }
+  }
+
+  /* Under the fixed header, as the site's pages start (pt-20: the header's 16 px and its 64 px bar). */
+  main { flex: 1; padding-top: 80px; }
+
+  /*
+   * ── The header: the site's floating bar (the site's Nav and chrome.css) ──────────────────
+   * Fixed over the page and clear at rest, it condenses into the outlined card once the page has
+   * moved 24 px (from the start without a script). The lockup and the button lead to earnd.life,
+   * the button in a new tab, so this page stays open. While motion plays it steps up out of the
+   * way as the page moves down and comes back the moment it moves up (the script at the foot of
+   * the page), and stays near the top of the page, while a mouse rests along the top edge of the
+   * window and while keyboard focus is inside it.
+   */
+  .chrome-header {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 50;
+    padding: var(--ds-space-md) var(--ds-space-md) 0;
+  }
+
+  .chrome-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 64rem;
+    height: 64px;
+    margin-inline: auto;
+    padding-inline: var(--ds-space-md);
+    border: 1px solid transparent;
+    border-radius: var(--ds-radius-card);
+  }
+
+  .chrome-header[data-scrolled] .chrome-bar,
+  html:not([data-js]) .chrome-bar {
+    border-color: var(--ds-color-border);
+    background: var(--ds-color-surface-elevated);
+  }
+
+  /* Under 360 px the bar's padding tightens, as the site's does. */
+  @media (max-width: 359.98px) {
+    .chrome-bar { padding-inline: var(--ds-space-sm); }
+  }
+
+  /*
+   * The lockup (the site's chrome.css, .chrome-logo): the mark's box set before the file arrives.
+   * In the bar it takes the sizes of the site's header: 28 px at a 412 px window down to 18.6 px
+   * at 360 px, and 21 px at 640 px, back at 28 px by 700 px.
+   */
+  .chrome-logo {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    font-size: var(--ds-font-size-2xl);
+    line-height: 1;
+  }
+
+  .chrome-header .chrome-logo { font-size: clamp(18.6px, calc(18.27vw - 47.3px), var(--ds-font-size-2xl)); }
+
+  @media (min-width: 40rem) {
+    .chrome-header .chrome-logo { font-size: clamp(21px, calc(11.667vw - 53.67px), var(--ds-font-size-2xl)); }
+  }
+
+  .chrome-logo-mark {
+    display: block;
+    flex: none;
+    width: 1.0863em;
+    max-width: none;
+    height: 1.2922em;
+  }
+
+  .chrome-logo-word {
+    position: relative;
+    top: 0.058em;
+    margin-left: 0.1164em;
+    font-family: var(--ds-font-heading), system-ui, sans-serif;
+    font-weight: var(--ds-font-weight-bold);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    color: var(--ds-color-paper);
+  }
+
+  /*
+   * The way to the site, in the look of the site's call to action (its header's "Join the
+   * waitlist"): the primary button at its small size, 11 px words on a phone. A sheen crosses it
+   * under the pointer and on keyboard focus (fx-shine, the ::after), and for a mouse or a trackpad
+   * a beam orbits it on a ring of its own, a hairline of the bar between them (fx-beam, the
+   * ::before), resting while the page moves, while the header is away and when the visitor is idle;
+   * still, the ring is a mint edge along its top. It leans toward a mouse nearby (the script at the
+   * foot of the page), and its arrow says it leaves for the site.
+   */
+  .chrome-cta {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: var(--ds-control-height-sm);
+    padding-inline: var(--ds-control-padding-sm);
+    border-radius: var(--ds-radius-control);
+    background: var(--ds-color-primary);
+    color: var(--ds-color-on-primary);
+    font-size: var(--ds-font-size-sm);
+    line-height: var(--ds-line-height-sm);
+    font-weight: var(--ds-font-weight-semibold);
+    white-space: nowrap;
+  }
+
+  .chrome-cta:hover { background: var(--ds-color-primary-dim); }
+
+  .chrome-cta svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+  }
+
+  .chrome-cta::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 38%, color-mix(in srgb, var(--ds-color-text-primary) 32%, transparent) 50%, transparent 62%) 100% 0 / 300% 100% no-repeat;
+  }
+
+  @media (max-width: 39.99rem) {
+    .chrome-cta {
+      font-size: var(--ds-font-size-xs);
+      line-height: var(--ds-line-height-xs);
+    }
+
+    .chrome-cta svg { width: 14px; height: 14px; }
+  }
+
+  @media (max-width: 359.98px) {
+    .chrome-cta { padding-inline: var(--ds-space-sm); }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .chrome-cta::before {
+      --fx-beam-rest: var(--ds-color-beam-tail);
+      --fx-beam-ring: conic-gradient(
+        from calc(var(--fx-beam-angle) + var(--fx-beam-boost)),
+        var(--fx-beam-rest) 0deg 240deg,
+        var(--ds-color-beam-hot) 345.6deg,
+        var(--ds-color-beam-head) 357deg,
+        var(--fx-beam-rest)
+      );
+
+      content: "";
+      position: absolute;
+      inset: -3.5px;
+      z-index: -1;
+      padding: 1.5px;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(90deg, transparent, var(--ds-color-beam-head) 25% 75%, transparent) top / 100% 1.5px no-repeat;
+      /* The padding ring only: the whole box, minus its content box. */
+      -webkit-mask:
+        linear-gradient(var(--ds-color-background) 0 0) content-box,
+        linear-gradient(var(--ds-color-background) 0 0);
+      -webkit-mask-composite: xor;
+      mask:
+        linear-gradient(var(--ds-color-background) 0 0) content-box exclude,
+        linear-gradient(var(--ds-color-background) 0 0);
+    }
+  }
+
+  /*
+   * Back to the top (the site's ScrollToTop): a round control in the bottom corner once the page
+   * is most of a screen down, ringed by how far down the page is in the brand gradient
+   * (--chrome-progress, 0 to 1, written while motion plays; unset, the ring is empty).
+   */
+  .chrome-top-wrap {
+    position: fixed;
+    right: var(--ds-space-lg);
+    bottom: var(--ds-space-lg);
+    z-index: 50;
+    width: var(--ds-icon-button-md);
+    height: var(--ds-icon-button-md);
+    opacity: 0;
+    translate: 0 var(--ds-space-sm);
+    pointer-events: none;
+  }
+
+  .chrome-top-wrap[data-visible] {
+    opacity: 1;
+    translate: none;
+    pointer-events: auto;
+  }
+
+  .chrome-top {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-pill);
+    background: var(--ds-color-surface-elevated);
+    color: var(--ds-color-text-primary);
+    cursor: pointer;
+  }
+
+  .chrome-top:hover {
+    border-color: var(--ds-color-border-strong);
+    background: var(--ds-color-surface-overlay);
+  }
+
+  .chrome-top:disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .chrome-top svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .chrome-top-ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: var(--ds-radius-pill);
+    pointer-events: none;
+    background: conic-gradient(
+      var(--ds-color-brand-start) 0deg,
+      var(--ds-color-brand-mid) calc(var(--chrome-progress, 0) * 180deg),
+      var(--ds-color-brand-end) calc(var(--chrome-progress, 0) * 360deg),
+      transparent calc(var(--chrome-progress, 0) * 360deg)
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ds-color-background) calc(100% - 2px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ds-color-background) calc(100% - 2px));
+  }
+
+  /* ── The heading: a reading page's title in the brand gradient ─────────── */
+  /* Below the header as the site's reading pages are (their section's 48 px, 96 px from 768 px). */
+  .page-head { padding-top: var(--ds-space-3xl); }
+
+  @media (min-width: 48rem) {
+    .page-head { padding-top: calc(var(--ds-space-3xl) * 2); }
+  }
+
+  .reading-title {
+    font-size: var(--ds-font-size-3xl);
+    line-height: var(--ds-line-height-3xl);
+    font-weight: var(--ds-font-weight-bold);
+  }
+
+  @media (min-width: 48rem) {
+    .reading-title {
+      font-size: var(--ds-font-size-4xl);
+      line-height: var(--ds-line-height-4xl);
+    }
+  }
+
+  /* fx-gradient-sweep (the site's fx.css): the brand gradient clipped to the words, a band of light crossing once. */
+  .fx-gradient-sweep {
+    background-image:
+      linear-gradient(100deg, transparent 38%, var(--ds-color-text-primary) 50%, transparent 62%),
+      var(--ds-gradient-brand);
+    background-size: 300% 100%, 100% 100%;
+    background-position: 100% 0, 0 0;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .fx-gradient-sweep { -webkit-text-fill-color: transparent; }
+
+    .fx-gradient-sweep::selection {
+      background-color: var(--ds-color-glow-primary);
+      color: var(--ds-color-text-primary);
+      -webkit-text-fill-color: var(--ds-color-text-primary);
+    }
+  }
+
+  .caption {
+    font-size: var(--ds-font-size-sm);
+    line-height: var(--ds-line-height-sm);
+  }
+
+  .muted { color: var(--ds-color-text-muted); }
+  .page-head .caption { margin-top: var(--ds-space-sm); }
+
+  /* ── The banner: the one panel that matters, its corners ticked in its state ── */
+  .overall {
+    --tone: var(--ds-color-text-muted);
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ds-space-md);
+    margin-top: var(--ds-space-2xl);
+    padding: var(--ds-space-lg);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-card);
+    background: var(--ds-color-card);
+  }
+
+  .overall[data-state="up"] { --tone: var(--ds-color-success); }
+  .overall[data-state="degraded"] { --tone: var(--ds-color-warning); }
+  .overall[data-state="down"] { --tone: var(--ds-color-danger); }
+
+  /* Registration ticks (the site's globals.css, .ins-tick). */
+  .ins-tick {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 0 solid var(--tone);
+    pointer-events: none;
+  }
+
+  .ins-tick-tl {
+    top: -1px;
+    left: -1px;
+    border-top-width: 2px;
+    border-left-width: 2px;
+    border-top-left-radius: var(--ds-radius-card);
+  }
+
+  .ins-tick-br {
+    right: -1px;
+    bottom: -1px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-bottom-right-radius: var(--ds-radius-card);
+  }
+
+  .overall-light {
+    position: relative;
+    flex: none;
+    width: 12px;
+    height: 12px;
+    margin-top: 10px;
+    border-radius: var(--ds-radius-pill);
+    background: var(--tone);
+    box-shadow:
+      0 0 0 4px color-mix(in oklab, var(--tone) 18%, transparent),
+      0 0 16px 2px color-mix(in oklab, var(--tone) 70%, transparent);
+  }
+
+  .overall-light::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--tone);
+    opacity: 0;
+  }
+
+  .overall-title {
+    font-size: var(--ds-font-size-xl);
+    line-height: var(--ds-line-height-xl);
+    color: var(--ds-color-text-primary);
+  }
+
+  .overall-detail {
+    margin-top: var(--ds-space-2xs);
+    color: var(--ds-color-text-secondary);
+  }
+
+  /* ── Sections: a hairline, a mint number, a title (components/topics/reading/ReadingSection.tsx) ── */
+  .sec {
+    position: relative;
+    margin-top: var(--ds-space-3xl);
+    padding-top: var(--ds-space-lg);
+  }
+
+  .ins-rule {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: var(--ds-color-border);
+    transform-origin: left center;
+  }
+
+  .sec-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: var(--ds-space-md);
+    font-size: var(--ds-font-size-lg);
+    line-height: var(--ds-line-height-lg);
+    color: var(--ds-color-text-primary);
+  }
+
+  .ins-label {
+    font-family: var(--ds-font-heading), system-ui, sans-serif;
+    font-size: var(--ds-font-size-xs);
+    line-height: var(--ds-line-height-xs);
+    font-weight: var(--ds-font-weight-semibold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .ins-mono::before { content: attr(data-mono); }
+
+  .sec-num {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    color: var(--ds-color-accent-mint);
+  }
+
+  .ins-figure {
+    font-family: var(--ds-font-heading), system-ui, sans-serif;
+    font-weight: var(--ds-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .empty { color: var(--ds-color-text-secondary); }
+
+  /* ── Components ───────────────────────────────────────────────────────── */
+  .components, .incidents, .now { display: grid; gap: 12px; }
+  .now { margin-top: 12px; }
+  .now[hidden] { display: none; }
+
+  .component, .incident {
+    position: relative;
+    padding: 18px;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-card);
+    background: var(--ds-color-card);
+  }
+
+  .component { padding-bottom: 14px; }
+
+  .component-head, .incident-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .component-name, .incident-title {
+    font-size: var(--ds-font-size-md);
+    line-height: var(--ds-line-height-md);
+    color: var(--ds-color-text-primary);
+  }
+
+  .component-desc, .incident-when {
+    margin-top: 2px;
+    font-size: var(--ds-font-size-sm);
+    line-height: var(--ds-line-height-sm);
+    color: var(--ds-color-text-secondary);
+  }
+
+  .figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 36px;
+    margin-top: var(--ds-space-md);
+  }
+
+  .figure dt { color: var(--ds-color-text-secondary); }
+
+  .figure dd { display: inline; }
+
+  .figure .ins-figure {
+    font-size: var(--ds-font-size-lg);
+    line-height: var(--ds-line-height-lg);
+    color: var(--ds-color-text-primary);
+  }
+
+  .figure-note {
+    margin-left: 6px;
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-secondary);
+  }
+
+  /* The 90-day strip: a bar a day (UTC), its colour the worst thing that day held. Phones show the last 30, tablets 60. */
+  .strip {
+    display: flex;
+    gap: 3px;
+    height: 34px;
+    margin-top: var(--ds-space-md);
+    border-radius: var(--ds-radius-sm);
+  }
+
+  .strip:focus-visible { outline-offset: 5px; }
+
+  .bar {
+    flex: 1 1 0;
+    min-width: 0;
+    border-radius: var(--ds-radius-sm);
+    background: var(--ds-color-control-wash);
+    transform-origin: center bottom;
+  }
+
+  .bar[data-state="up"] { background: var(--ds-color-success); }
+  .bar[data-state="degraded"] { background: var(--ds-color-warning); }
+  .bar[data-state="down"] { background: var(--ds-color-danger); }
+
+  .bar.is-active {
+    box-shadow:
+      0 0 0 2px var(--ds-color-card),
+      0 0 0 3px var(--ds-color-text-primary);
+  }
+
+  .strip-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: var(--ds-font-size-xs);
+    line-height: var(--ds-line-height-xs);
+    color: var(--ds-color-text-secondary);
+  }
+
+  .ago-60, .ago-30 { display: none; }
+
+  @media (max-width: 47.99rem) {
+    .strip { gap: 2px; }
+    .bar:nth-child(-n+30) { display: none; }
+    .ago-90 { display: none; }
+    .ago-60 { display: inline; }
+  }
+
+  @media (max-width: 29.99rem) {
+    .bar:nth-child(-n+60) { display: none; }
+    .ago-60 { display: none; }
+    .ago-30 { display: inline; }
+  }
+
+  /* A day, read under the pointer, on a tap, or with the arrow keys. */
+  .tip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    padding: 8px 12px;
+    border: 1px solid var(--ds-color-border-strong);
+    border-radius: var(--ds-radius-lg);
+    background: var(--ds-color-surface-overlay);
+    box-shadow: 0 12px 32px -12px color-mix(in oklab, var(--ds-color-background) 90%, transparent);
+    font-size: var(--ds-font-size-sm);
+    line-height: var(--ds-line-height-sm);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .tip[hidden] { display: none; }
+
+  .tip-day {
+    font-family: var(--ds-font-heading), system-ui, sans-serif;
+    font-weight: var(--ds-font-weight-semibold);
+    color: var(--ds-color-text-primary);
+  }
+
+  .tip-line { color: var(--ds-color-text-secondary); }
+
+  /* ── Incidents ───────────────────────────────────────────────────────── */
+  .incident.is-open { border-color: color-mix(in oklab, var(--ds-color-warning) 40%, var(--ds-color-border)); }
+
+  .incident.is-open::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--ds-color-warning);
+  }
+
+  .incident-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: var(--ds-space-sm);
+  }
+
+  .incident-body {
+    margin-top: 12px;
+    color: var(--ds-color-text-secondary);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* ── How this page works ─────────────────────────────────────────────── */
+  .prose {
+    display: grid;
+    gap: var(--ds-space-md);
+    max-width: 46rem;
+    color: var(--ds-color-text-secondary);
+  }
+
+  .legend { display: grid; gap: var(--ds-space-sm); }
+
+  .legend > div {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+
+  @media (max-width: 29.99rem) {
+    .legend > div { grid-template-columns: 1fr; gap: 6px; }
+  }
+
+  .legend dt { line-height: 0; }
+
+  .link { color: var(--ds-color-accent-mint); }
+
+  /* fx-underline-draw (the site's fx.css): a gradient underline that draws in on hover and focus. */
+  .fx-underline-draw {
+    background-image:
+      var(--ds-gradient-brand),
+      linear-gradient(var(--fx-underline-rest, var(--ds-color-border-strong)) 0 0);
+    background-size: 0% 2px, 100% 1px;
+    background-position: 0 100%, 0 100%;
+    background-repeat: no-repeat;
+  }
+
+  .fx-underline-draw:is(:hover, :focus-visible) { background-size: 100% 2px, 100% 1px; }
+
+  /* ── The pill family (the site's pills.css): a status's capsule and its light ── */
+  .pill {
+    --pill-tone: var(--ds-color-accent-mint);
+    --pill-tone-2: var(--ds-color-primary);
+    --pill-ink: var(--pill-tone);
+    --pill-tint: 12%;
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 1.625rem;
+    padding: 0.1875rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: var(--ds-radius-pill);
+    font-size: var(--ds-font-size-xs);
+    line-height: var(--ds-line-height-xs);
+    font-weight: var(--ds-font-weight-semibold);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    color: var(--pill-ink);
+    background:
+      linear-gradient(
+          180deg,
+          color-mix(in oklab, var(--pill-tone) var(--pill-tint), var(--ds-color-surface-elevated)),
+          color-mix(in oklab, var(--pill-tone) calc(var(--pill-tint) / 3), var(--ds-color-card))
+        )
+        padding-box,
+      linear-gradient(
+          115deg,
+          color-mix(in oklab, var(--pill-tone) calc(var(--pill-lit) * 100%), var(--ds-color-border-strong)),
+          color-mix(in oklab, var(--pill-tone-2) calc(var(--pill-lit) * 45%), var(--ds-color-border)) 58%,
+          color-mix(in oklab, var(--pill-tone) calc(var(--pill-lit) * 80%), var(--ds-color-border-strong))
+        )
+        border-box;
+  }
+
+  .pill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--ds-color-text-primary) 16%, transparent),
+      inset 0 -1px 0 color-mix(in oklab, var(--ds-color-background) 50%, transparent),
+      0 5px 14px -6px color-mix(in oklab, var(--pill-tone) calc(var(--pill-lit) * (32% + var(--pill-glow) * 38%)), transparent);
+  }
+
+  .pill::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 36%, color-mix(in oklab, var(--ds-color-text-primary) 30%, transparent) 50%, transparent 64%) 100% 0 / 300% 100% no-repeat;
+  }
+
+  .pill-brand { --pill-tone: var(--ds-color-accent-mint); --pill-tone-2: var(--ds-color-primary); }
+  .pill-neutral { --pill-ink: var(--ds-color-text-secondary); --pill-lit: 0.3; --pill-tint: 0%; }
+  .pill-success { --pill-tone: var(--ds-color-success); --pill-tone-2: var(--ds-color-success); }
+  .pill-warning { --pill-tone: var(--ds-color-warning); --pill-tone-2: var(--ds-color-warning); }
+  .pill-danger { --pill-tone: var(--ds-color-danger); --pill-tone-2: var(--ds-color-danger); }
+
+  .pill-dot {
+    position: relative;
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--ds-radius-pill);
+    background: var(--pill-tone);
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--pill-tone) 18%, transparent),
+      0 0 8px 1px color-mix(in oklab, var(--pill-tone) 75%, transparent);
+  }
+
+  .pill-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--pill-tone);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .pill-neutral .pill-dot {
+    background: var(--ds-color-text-muted);
+    box-shadow: none;
+  }
+
+  /* ── The footer: the lockup, the profiles, the small print, the wordmark ── */
+  .site-footer {
+    --fx-underline-rest: transparent;
+    position: relative;
+    margin-top: 96px;
+    overflow-x: clip;
+  }
+
+  .rule {
+    display: block;
+    height: 1px;
+    margin: 0;
+    border: 0;
+    background: var(--ds-color-border);
+  }
+
+  .footer-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ds-space-sm);
+    padding-top: var(--ds-space-2xl);
+    padding-bottom: var(--ds-space-lg);
+    text-align: center;
+  }
+
+  .social {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-xs);
+  }
+
+  .social a {
+    display: inline-flex;
+    padding: var(--ds-space-xs);
+    border-radius: var(--ds-radius-pill);
+    color: var(--ds-color-text-secondary);
+  }
+
+  .social a:is(:hover, :focus-visible) { color: var(--ds-color-text-primary); }
+  .small-links a:hover { color: var(--ds-color-text-secondary); }
+
+  /* The big wordmark across the foot (the site's chrome.css, .chrome-wordmark): a decoration, aria-hidden. */
+  .chrome-wordmark {
+    display: block;
+    margin-top: var(--ds-space-xl);
+    overflow-x: visible;
+    overflow-y: clip;
+    font-family: var(--ds-font-heading), system-ui, sans-serif;
+    font-size: 30vw;
+    font-weight: var(--ds-font-weight-bold);
+    line-height: 0.8;
+    letter-spacing: -0.065em;
+    text-align: center;
+    white-space: nowrap;
+    user-select: none;
+    pointer-events: none;
+    view-timeline: --chrome-wordmark block;
+  }
+
+  @media (min-width: 40rem) {
+    .chrome-wordmark { font-size: 22vw; }
+  }
+
+  .chrome-wordmark::before {
+    content: attr(data-wordmark);
+    display: block;
+    padding: 0.04em 0.08em 0;
+    color: var(--ds-color-primary);
+    background-image:
+      linear-gradient(
+        105deg,
+        transparent calc(var(--chrome-sweep-x) - 7%),
+        color-mix(in oklab, var(--ds-color-text-primary) calc(var(--chrome-sweep-on) * 92%), transparent) var(--chrome-sweep-x),
+        transparent calc(var(--chrome-sweep-x) + 7%)
+      ),
+      radial-gradient(30vw 150% at var(--chrome-sweep-x) 50%, color-mix(in oklab, var(--ds-color-accent-mint) calc(var(--chrome-sweep-on) * 45%), transparent), transparent 70%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+      linear-gradient(100deg, var(--ds-color-brand-start), var(--ds-color-brand-mid) 52%, var(--ds-color-brand-end));
+    background-size: 100% 100%, 100% 100%, 180px 180px, 100% 100%;
+    background-blend-mode: normal, normal, overlay, normal;
+    -webkit-mask-image: linear-gradient(to bottom, var(--ds-color-background) 30%, color-mix(in oklab, var(--ds-color-background) 22%, transparent));
+    mask-image: linear-gradient(to bottom, var(--ds-color-background) 30%, color-mix(in oklab, var(--ds-color-background) 22%, transparent));
+  }
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .chrome-wordmark::before {
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  }
+
+  /*
+   * Motion, the site's way: still first (reduced motion and no script get every word in place),
+   * entrances move and never fade, every loop rests when the visitor is idle (html[data-idle],
+   * after 12 s without input), and nothing replays when fresh results come in (html[data-settled]).
+   */
+  @media screen and (prefers-reduced-motion: no-preference) {
+    /* Film grain over the page, the phones' still tile (the site's fx.css, fx-grain). */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+      background-size: 160px 160px;
+      opacity: var(--ds-grain-opacity-lite);
+    }
+
+    .skip-link { transition: transform var(--ds-motion-base) var(--ds-ease-standard); }
+    .reading-title { animation: fx-view-rise var(--ds-motion-reveal) var(--ds-ease-entrance) backwards; }
+    .fx-gradient-sweep[data-fx-sweep="on"] { animation: fx-sweep-pass 1.2s ease-in-out both; }
+    .rise { animation: fx-view-rise var(--ds-motion-reveal) var(--ds-ease-entrance) var(--delay, 0ms) backwards; }
+    .ins-rule { animation: fx-draw var(--ds-motion-draw) var(--ds-ease-entrance) 80ms both; }
+    .bar { animation: bar-rise var(--ds-motion-draw) var(--ds-ease-entrance) calc(var(--i, 0) * 4ms + 160ms) backwards; }
+    .overall .ins-tick-tl { animation: fx-lock-tl var(--ds-motion-reveal) var(--ds-ease-entrance) 180ms both; }
+    .overall .ins-tick-br { animation: fx-lock-br var(--ds-motion-reveal) var(--ds-ease-entrance) 180ms both; }
+    .overall-light { animation: fx-light var(--ds-motion-slow) var(--ds-ease-entrance) 200ms both; }
+    .overall:not([data-state="unknown"]) .overall-light::after { animation: pill-ping 2.8s var(--ds-ease-standard) 1.2s infinite; }
+
+    .social a { transition: color var(--ds-motion-fast) var(--ds-ease-standard); }
+    .bar { transition: box-shadow var(--ds-motion-fast) var(--ds-ease-standard); }
+
+    .fx-underline-draw {
+      transition:
+        background-size var(--ds-motion-slow) var(--ds-ease-entrance),
+        color var(--ds-motion-fast) var(--ds-ease-standard);
+    }
+
+    .pill {
+      transition:
+        --pill-lit var(--ds-motion-slow) var(--ds-ease-standard),
+        --pill-glow var(--ds-motion-slow) var(--ds-ease-standard),
+        color var(--ds-motion-base) var(--ds-ease-standard);
+    }
+
+    /* A status settles into its tone as the page opens, grey to colour (pill-settle-on). */
+    .pill-settle-on {
+      transition:
+        --pill-lit 700ms var(--ds-ease-entrance) 150ms,
+        color 700ms var(--ds-ease-entrance) 150ms;
+    }
+
+    @starting-style {
+      .pill-settle-on {
+        --pill-lit: 0;
+        color: var(--ds-color-text-secondary);
+      }
+    }
+
+    .pill-live .pill-dot::after { animation: pill-ping 2.8s var(--ds-ease-standard) 1.2s infinite; }
+
+    @media (hover: hover) and (pointer: fine) {
+      .pill:hover::after,
+      .component:hover .pill::after { animation: pill-sheen 900ms var(--ds-ease-standard); }
+    }
+
+    html[data-idle] .pill-live .pill-dot::after,
+    html[data-idle] .overall .overall-light::after { animation: none; }
+
+    html[data-settled] :is(.rise, .bar, .ins-rule, .overall-light, .ins-tick) { animation: none; }
+
+    .chrome-wordmark {
+      transition:
+        --chrome-sweep-x 900ms var(--ds-ease-entrance),
+        --chrome-sweep-on 600ms var(--ds-ease-standard);
+    }
+
+    .chrome-wordmark[data-reveal="once"]::before { transition: translate 1200ms var(--ds-ease-entrance); }
+    .chrome-wordmark[data-reveal="once"]:not([data-revealed])::before { translate: 0 100%; }
+
+    @media (pointer: coarse), (max-width: 47.99rem) {
+      .chrome-wordmark[data-reveal="once"]:not([data-revealed])::before { translate: 0 24%; }
+    }
+
+    @supports (animation-timeline: view()) {
+      .chrome-wordmark[data-reveal="scrub"]::before {
+        animation: chrome-wordmark-rise linear both;
+        animation-timeline: --chrome-wordmark;
+        animation-range: entry 0% entry 90%;
+      }
+    }
+  }
+
+  /*
+   * The header's and the back-to-top control's motion, the site's (its chrome.css), behind the same
+   * gate: under reduced motion the header never leaves.
+   */
+  @media screen and (prefers-reduced-motion: no-preference) {
+    /*
+     * The header drops in as the page opens. It steps up out of the way by the translate property,
+     * so the entrance (a transform) is untouched: leaving gathers speed, coming back lands softly.
+     */
+    .chrome-header {
+      animation: enter-header var(--ds-motion-slow) var(--ds-ease-entrance) 150ms backwards;
+      transition: translate 520ms var(--ds-ease-entrance);
+    }
+
+    .chrome-header[data-retreat="away"]:not([data-peek], :has(:focus-visible)) {
+      translate: 0 calc(-100% - 8px);
+      transition: translate 380ms cubic-bezier(0.55, 0, 0.75, 0.15);
+    }
+
+    .chrome-bar,
+    .chrome-top {
+      transition:
+        color var(--ds-motion-fast) var(--ds-ease-standard),
+        background-color var(--ds-motion-fast) var(--ds-ease-standard),
+        border-color var(--ds-motion-fast) var(--ds-ease-standard);
+    }
+
+    .chrome-cta {
+      transition:
+        color var(--ds-motion-fast) var(--ds-ease-standard),
+        background-color var(--ds-motion-fast) var(--ds-ease-standard),
+        outline-color var(--ds-motion-fast) var(--ds-ease-standard),
+        scale var(--ds-motion-fast) var(--ds-ease-standard);
+    }
+
+    .chrome-cta:focus-visible::after { animation: fx-shine-pass 0.9s ease-in-out; }
+
+    @media (hover: hover) {
+      .chrome-cta:hover::after { animation: fx-shine-pass 0.9s ease-in-out; }
+
+      /* Its arrow leans out toward the site. */
+      .chrome-cta svg { transition: transform var(--ds-motion-base) var(--ds-ease-standard); }
+      .chrome-cta:hover svg { transform: translate(2px, -2px); }
+    }
+
+    /* A press on a touch screen sinks it a little. */
+    @media (pointer: coarse) {
+      .chrome-cta:active { scale: 0.96; }
+    }
+
+    /* The beam: one loop in 6 s, one in 2 s under the pointer or keyboard focus (the boost turns on top of the loop). */
+    @media (hover: hover) and (pointer: fine) {
+      .chrome-cta::before {
+        background: var(--fx-beam-ring);
+        animation:
+          fx-beam-turn 6s linear infinite,
+          fx-beam-boost 3s linear infinite paused;
+      }
+
+      .chrome-cta:is(:hover, :focus-visible)::before { animation-play-state: running, running; }
+
+      /* After those, and above them: it rests while the page moves, when the visitor is idle and while the header is away. */
+      .chrome-header .chrome-cta[data-beam="rest"]::before,
+      html[data-idle] .chrome-header .chrome-cta::before,
+      .chrome-header[data-retreat="away"]:not([data-peek], :has(:focus-visible)) .chrome-cta::before {
+        animation-play-state: paused, paused;
+      }
+    }
+
+    .chrome-top-wrap {
+      transition:
+        opacity var(--ds-motion-base) var(--ds-ease-standard),
+        translate var(--ds-motion-base) var(--ds-ease-standard);
+    }
+
+    /* The back-to-top arrow lifts a little under the pointer. */
+    @media (hover: hover) {
+      .chrome-top svg { transition: translate 320ms var(--ds-ease-entrance); }
+      .chrome-top:hover svg { translate: 0 -2px; }
+    }
+  }
+
+  @keyframes enter-header { from { opacity: 0; transform: translateY(-12px); } }
+
+  @keyframes fx-shine-pass {
+    from { background-position: 100% 0; }
+    to { background-position: 0% 0; }
+  }
+
+  @keyframes fx-beam-turn { to { --fx-beam-angle: 360deg; } }
+  @keyframes fx-beam-boost { to { --fx-beam-boost: 360deg; } }
+
+  @keyframes fx-view-rise { from { transform: translateY(16px); } }
+  @keyframes fx-draw { from { transform: scaleX(0); } }
+  @keyframes fx-light { from { transform: scale(0.4); opacity: 0; } }
+  @keyframes fx-lock-tl { from { transform: translate(-6px, -6px); opacity: 0; } }
+  @keyframes fx-lock-br { from { transform: translate(6px, 6px); opacity: 0; } }
+  @keyframes bar-rise { from { transform: scaleY(0.2); } }
+
+  @keyframes fx-sweep-pass {
+    from { background-position: 100% 0, 0 0; }
+    to { background-position: 0% 0, 0 0; }
+  }
+
+  @keyframes pill-sheen {
+    from { background-position: 100% 0; }
+    to { background-position: 0% 0; }
+  }
+
+  @keyframes pill-ping {
+    0% { opacity: 0.6; transform: scale(1); }
+    55%, 100% { opacity: 0; transform: scale(3.4); }
+  }
+
+  @keyframes chrome-wordmark-rise {
+    from { translate: 0 100%; }
+    to { translate: 0 0; }
+  }
+
+  /* Forced colours and print: the plain text colour, outlined capsules, no decoration. */
+  @media (forced-colors: active), print {
+    .fx-gradient-sweep { background-image: none; -webkit-text-fill-color: currentColor; }
+    .pill { border-color: currentColor; background: none; }
+    .pill::before, .pill::after { display: none; }
+    .chrome-wordmark, body::before { display: none; }
+    .fx-underline-draw { background-image: none; text-decoration-line: underline; }
+    .chrome-cta::before, .chrome-cta::after, .chrome-top-ring { display: none; }
+  }
+
+  /* On paper the header stands once, at the top of the first page, and the back-to-top control is left off. */
+  @media print {
+    .chrome-header { position: absolute; }
+    .chrome-top-wrap { display: none; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <img src="assets/earnd-mark-on-dark.svg" alt="">
-    <div class="word">Earnd <span>status</span></div>
-  </header>
+<a href="#main" class="skip-link">Skip to content</a>
 
-  <div class="banner unknown" id="banner">
-    <h1 id="headline">Checking</h1>
-    <div class="when" id="when">Loading the latest check.</div>
+<!--
+  The site's header (its Nav), its look and its motion: the lockup, and the way to earnd.life,
+  which opens in a new tab so this page stays open.
+-->
+<header class="chrome-header">
+  <div class="chrome-bar">
+    <a class="chrome-logo" href="https://earnd.life" aria-label="Earnd home">
+      <img class="chrome-logo-mark" src="assets/earnd-mark-on-dark.svg" alt="" width="30" height="36">
+      <span class="chrome-logo-word">Earnd</span>
+    </a>
+    <a class="chrome-cta" href="https://earnd.life" target="_blank" rel="noopener">earnd.life<span class="sr-only"> (opens in a new tab)</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path d="M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg></a>
+  </div>
+</header>
+
+<main id="main" class="container">
+  <div class="page-head">
+    <h1 class="reading-title"><span class="fx-gradient-sweep" data-fx-sweep="on">Status</span></h1>
+    <p class="caption muted" id="checked">Loading the latest check.</p>
   </div>
 
-  <section>
-    <h2>Components</h2>
-    <div id="components"><p class="empty">Loading.</p></div>
+  <section class="overall" id="overall" data-state="unknown" aria-labelledby="headline">
+    <span class="ins-tick ins-tick-tl" aria-hidden="true"></span>
+    <span class="ins-tick ins-tick-br" aria-hidden="true"></span>
+    <span class="overall-light" aria-hidden="true"></span>
+    <div>
+      <h2 class="overall-title" id="headline">Checking</h2>
+      <p class="overall-detail" id="overall-detail">Reading the latest results.</p>
+    </div>
   </section>
 
-  <section>
-    <h2>Incidents</h2>
-    <div id="incidents"><p class="empty">Loading.</p></div>
+  <div class="now" id="now" hidden></div>
+
+  <section class="sec" aria-labelledby="components-title">
+    <span class="ins-rule" aria-hidden="true"></span>
+    <h2 class="sec-title" id="components-title"><span class="sec-num ins-mono ins-label" data-mono="01" aria-hidden="true"></span>Components</h2>
+    <div class="components" id="components"><p class="empty">Loading.</p></div>
   </section>
 
-  <noscript><p>This page needs JavaScript to read the latest check. The raw data is in <a href="status.json">status.json</a>, <a href="history.json">history.json</a> and <a href="incidents.json">incidents.json</a>.</p></noscript>
+  <section class="sec" aria-labelledby="incidents-title">
+    <span class="ins-rule" aria-hidden="true"></span>
+    <h2 class="sec-title" id="incidents-title"><span class="sec-num ins-mono ins-label" data-mono="02" aria-hidden="true"></span>Incidents</h2>
+    <div class="incidents" id="incidents"><p class="empty">Loading.</p></div>
+  </section>
 
-  <footer>
-    Checked every <span id="every">30</span> minutes from GitHub's servers, not Earnd's own, so this page stays up when the site does not.
-    Degraded means slow or answering on the second try; down means no expected answer. Uptime counts degraded as up.
-    Something wrong that is not shown here? Write to <a href="mailto:hello@earnd.life">hello@earnd.life</a>.
-    <a href="https://earnd.life">earnd.life</a>
-  </footer>
+  <section class="sec" aria-labelledby="how-title">
+    <span class="ins-rule" aria-hidden="true"></span>
+    <h2 class="sec-title" id="how-title"><span class="sec-num ins-mono ins-label" data-mono="03" aria-hidden="true"></span>How this page works</h2>
+    <div class="prose">
+      <dl class="legend">
+        <div>
+          <dt><span class="pill pill-success"><span class="pill-dot" aria-hidden="true"></span>Up</span></dt>
+          <dd>An expected answer came back quickly, on the first try.</dd>
+        </div>
+        <div>
+          <dt><span class="pill pill-warning"><span class="pill-dot" aria-hidden="true"></span>Degraded</span></dt>
+          <dd>It answered, but slowly or only on the second try.</dd>
+        </div>
+        <div>
+          <dt><span class="pill pill-danger"><span class="pill-dot" aria-hidden="true"></span>Down</span></dt>
+          <dd>No expected answer in two tries: a time-out, a refused connection, an error.</dd>
+        </div>
+      </dl>
+      <p>Uptime is the share of checks that were not down. Degraded counts as up, because slow is not out. Each bar is one day, in UTC; times on this page are in IST.</p>
+      <p>The checks are scheduled every <span id="every">30</span> minutes and run on GitHub's servers, not Earnd's own, so this page stays up when the site does not. GitHub sometimes runs a scheduled check later than planned.</p>
+    </div>
+  </section>
+
+  <noscript><p class="empty">This page needs JavaScript to read the latest check. The raw data is in <a class="link" href="status.json">status.json</a>, <a class="link" href="history.json">history.json</a> and <a class="link" href="incidents.json">incidents.json</a>.</p></noscript>
 </main>
+
+<footer class="site-footer" id="footer">
+  <hr class="rule">
+  <div class="container footer-inner">
+    <a class="chrome-logo" href="https://earnd.life" aria-label="Earnd home">
+      <img class="chrome-logo-mark" src="assets/earnd-mark-on-dark.svg" alt="" width="30" height="36">
+      <span class="chrome-logo-word">Earnd</span>
+    </a>
+    <!-- The brand's live profiles, in the site's order (content/brand.ts; content/status-page.test.ts holds them). -->
+    <nav aria-label="Earnd on social media">
+      <ul class="social">
+        <li><a href="https://www.instagram.com/earndlife/" target="_blank" rel="me noopener" aria-label="Earnd on Instagram"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path d="M3 12C3 7.75736 3 5.63604 4.31802 4.31802C5.63604 3 7.75736 3 12 3C16.2426 3 18.364 3 19.682 4.31802C21 5.63604 21 7.75736 21 12C21 16.2426 21 18.364 19.682 19.682C18.364 21 16.2426 21 12 21C7.75736 21 5.63604 21 4.31802 19.682C3 18.364 3 16.2426 3 12Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path><path d="M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path><path d="M17.3748 6.75024H17.2498M17.4998 6.75024C17.4998 6.88832 17.3878 7.00024 17.2498 7.00024C17.1117 7.00024 16.9998 6.88832 16.9998 6.75024C16.9998 6.61217 17.1117 6.50024 17.2498 6.50024C17.3878 6.50024 17.4998 6.61217 17.4998 6.75024Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg></a></li>
+        <li><a href="https://www.facebook.com/earndlife" target="_blank" rel="me noopener" aria-label="Earnd on Facebook"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path d="M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"></path><path d="M16.9265 8.02637H13.9816C12.9378 8.02637 12.0894 8.86847 12.0817 9.91229L11.9964 21.4268M10.082 14.0017H14.8847" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg></a></li>
+        <li><a href="https://x.com/earndlife" target="_blank" rel="me noopener" aria-label="Earnd on X"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path d="M3 21L10.5484 13.4516M21 3L13.4516 10.5484M13.4516 10.5484L8 3H3L10.5484 13.4516M13.4516 10.5484L21 21H16L10.5484 13.4516" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg></a></li>
+        <li><a href="https://www.linkedin.com/company/earndlife/" target="_blank" rel="me noopener" aria-label="Earnd on LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path d="M7 10V17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path><path d="M11 13V17M11 13C11 11.3431 12.3431 10 14 10C15.6569 10 17 11.3431 17 13V17M11 13V10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path><path d="M7.125 6.75H7M7.25 6.75C7.25 6.88807 7.13807 7 7 7C6.86193 7 6.75 6.88807 6.75 6.75C6.75 6.61193 6.86193 6.5 7 6.5C7.13807 6.5 7.25 6.61193 7.25 6.75Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path><path d="M3 12C3 7.75736 3 5.63604 4.31802 4.31802C5.63604 3 7.75736 3 12 3C16.2426 3 18.364 3 19.682 4.31802C21 5.63604 21 7.75736 21 12C21 16.2426 21 18.364 19.682 19.682C18.364 21 16.2426 21 12 21C7.75736 21 5.63604 21 4.31802 19.682C3 18.364 3 16.2426 3 12Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg></a></li>
+        <li><a href="https://www.youtube.com/@earnd_life" target="_blank" rel="me noopener" aria-label="Earnd on YouTube"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path d="M12 20.5C13.8097 20.5 15.5451 20.3212 17.1534 19.9934C19.1623 19.5839 20.1668 19.3791 21.0834 18.2006C22 17.0221 22 15.6693 22 12.9635V11.0365C22 8.33073 22 6.97787 21.0834 5.79937C20.1668 4.62088 19.1623 4.41613 17.1534 4.00662C15.5451 3.67877 13.8097 3.5 12 3.5C10.1903 3.5 8.45489 3.67877 6.84656 4.00662C4.83766 4.41613 3.83321 4.62088 2.9166 5.79937C2 6.97787 2 8.33073 2 11.0365V12.9635C2 15.6693 2 17.0221 2.9166 18.2006C3.83321 19.3791 4.83766 19.5839 6.84656 19.9934C8.45489 20.3212 10.1903 20.5 12 20.5Z" stroke="currentColor" stroke-width="1.8"></path><path d="M15.9621 12.3129C15.8137 12.9187 15.0241 13.3538 13.4449 14.2241C11.7272 15.1705 10.8684 15.6438 10.1728 15.4615C9.9372 15.3997 9.7202 15.2911 9.53799 15.1438C9 14.7089 9 13.8059 9 12C9 10.1941 9 9.29112 9.53799 8.85618C9.7202 8.70886 9.9372 8.60029 10.1728 8.53854C10.8684 8.35621 11.7272 8.82945 13.4449 9.77593C15.0241 10.6462 15.8137 11.0813 15.9621 11.6871C16.0126 11.8933 16.0126 12.1067 15.9621 12.3129Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"></path></svg></a></li>
+      </ul>
+    </nav>
+    <p class="caption muted small-links">© <span id="year">2026</span> Earnd · Made for India 🇮🇳 · <a class="fx-underline-draw" href="mailto:hello@earnd.life">hello@earnd.life</a></p>
+  </div>
+  <div class="chrome-wordmark" data-wordmark="Earnd" aria-hidden="true"></div>
+</footer>
+
+<div class="tip" id="tip" hidden><div class="tip-day"></div><div class="tip-line"></div></div>
+<p class="sr-only" id="live" aria-live="polite"></p>
+
+<!-- Back to the top (the site's ScrollToTop). -->
+<div class="chrome-top-wrap" data-scroll-top aria-hidden="true">
+  <button class="chrome-top" type="button" aria-label="Scroll back to top" disabled tabindex="-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path d="M17.9998 15C17.9998 15 13.5809 9.00001 11.9998 9C10.4187 8.99999 5.99985 15 5.99985 15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg></button>
+  <span class="chrome-top-ring" aria-hidden="true"></span>
+</div>
+
 <script>
-(async function () {
-  const DAYS = 90;
-  const fmt = (iso) => new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }) + " IST";
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const words = { up: "All systems normal", degraded: "Slower than usual", down: "Something is down", unknown: "No check yet" };
-  const get = async (name) => { try { const r = await fetch(name + "?t=" + Date.now(), { cache: "no-store" }); return r.ok ? await r.json() : null; } catch { return null; } };
+// The header, its button and the back-to-top control, as the site's (its Nav, its magnetic call
+// to action and ScrollToTop). A script of their own, so they work while the results are still
+// on their way.
+(() => {
+  const root = document.documentElement;
+  const header = document.querySelector(".chrome-header");
+  const cta = header.querySelector(".chrome-cta");
+  const top = document.querySelector("[data-scroll-top]");
+  const topButton = top.querySelector("button");
+  const ring = top.querySelector(".chrome-top-ring");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const fine = matchMedia("(hover: hover) and (pointer: fine)");
 
-  const [status, history, incidents] = await Promise.all([get("status.json"), get("history.json"), get("incidents.json")]);
-  const now = status && status.generatedAt ? new Date(status.generatedAt) : new Date();
+  // ── The header ──
+  // It steps aside once the page has moved 28 px down in one direction, comes back after 14 px up,
+  // and always shows in the top 120 px (the site's headroomStep). A page that got shorter under a
+  // reader at its foot pulls the scroll back with it: that is not the reader moving up.
+  const step = (state, y, max) => {
+    if (y <= 120) return { hidden: false, lastY: y, travel: 0, lastMax: max };
+    const dy = y - state.lastY;
+    if (max < state.lastMax && y >= max - 1 && dy < 0 && -dy <= state.lastMax - max + 1) return { ...state, lastY: y, lastMax: max };
+    if (dy === 0) return { ...state, lastMax: max };
+    const travel = state.travel === 0 || Math.sign(dy) === Math.sign(state.travel) ? state.travel + dy : dy;
+    return { hidden: travel >= 28 ? true : travel <= -14 ? false : state.hidden, lastY: y, travel, lastMax: max };
+  };
+  let room = { hidden: false, lastY: scrollY, travel: 0, lastMax: Infinity };
+  let frame = 0;
+  const place = () => {
+    frame = 0;
+    const y = scrollY;
+    const max = root.scrollHeight - innerHeight;
+    const moving = !reduced.matches;
+    header.toggleAttribute("data-scrolled", y > 24);
+    room = moving ? step(room, y, max) : { hidden: false, lastY: y, travel: 0, lastMax: max };
+    if (room.hidden !== header.hasAttribute("data-retreat")) {
+      if (room.hidden) header.dataset.retreat = "away";
+      else delete header.dataset.retreat;
+    }
+    // The back-to-top control, once the page is most of a screen down; its ring follows the page while motion plays.
+    const shown = y > innerHeight * 0.8;
+    if (shown !== top.hasAttribute("data-visible")) {
+      top.toggleAttribute("data-visible", shown);
+      top.setAttribute("aria-hidden", String(!shown));
+      topButton.disabled = !shown;
+      topButton.tabIndex = shown ? 0 : -1;
+    }
+    if (moving && max > 0) ring.style.setProperty("--chrome-progress", Math.min(1, Math.max(0, y / max)).toFixed(4));
+    else ring.style.removeProperty("--chrome-progress");
+  };
+  // The button's beam rests while the page moves (and when the visitor is idle: html[data-idle]).
+  let still = 0;
+  addEventListener("scroll", () => {
+    frame ||= requestAnimationFrame(place);
+    if (!cta.dataset.beam) cta.dataset.beam = "rest";
+    clearTimeout(still);
+    still = setTimeout(() => delete cta.dataset.beam, 180);
+  }, { passive: true });
+  addEventListener("resize", () => (frame ||= requestAnimationFrame(place)));
+  reduced.addEventListener("change", place);
+  place();
 
-  const banner = document.getElementById("banner");
-  const overall = status && status.overall ? status.overall : "unknown";
-  banner.className = "banner " + overall;
-  document.getElementById("headline").textContent = words[overall] || words.unknown;
-  document.getElementById("when").textContent = status && status.generatedAt ? "Last checked " + fmt(status.generatedAt) : "The first check has not run yet.";
-  if (status && status.checkEveryMinutes) document.getElementById("every").textContent = status.checkEveryMinutes;
+  // ── The button's lean (the site's magnetic call to action) ──
+  // For a mouse or a trackpad with motion on: within 24 px of the button it leans toward the
+  // pointer, by 0.32 of the pointer's way from its centre and 12 px at most, closing in over about
+  // 0.4 s; once the pointer goes it springs home in 0.9 s on elastic.out(1, 0.5). It moves by the
+  // CSS translate property alone, so the press (scale) composes with it, and reads its box in the
+  // frame after a move, as the header it sits in moves; a pointer far from it costs no read.
+  const boing = (t) => (t >= 1 ? 1 : 2 ** (-10 * t) * Math.sin((t - 0.125) * 4 * Math.PI) + 1);
+  let lean = { x: 0, y: 0 };
+  let aim = null;
+  let home = null;
+  let seen = null;
+  let pointer = null;
+  let last = 0;
+  let pulling = 0;
+  const show = () => (cta.style.translate = lean.x || lean.y ? `${lean.x.toFixed(2)}px ${lean.y.toFixed(2)}px` : "");
+  const letGo = (now) => {
+    if (aim) home = { from: lean, start: now };
+    aim = null;
+  };
+  const pull = (now) => {
+    pulling = 0;
+    const dt = last ? now - last : 16;
+    last = now;
+    if (pointer) {
+      const p = pointer;
+      pointer = null;
+      const far = !aim && !home && seen && (p.x < seen.left - 160 || p.x > seen.right + 160 || p.y < seen.top - 160 || p.y > seen.bottom + 160);
+      if (!far) {
+        const box = cta.getBoundingClientRect();
+        seen = { left: box.left - lean.x, right: box.right - lean.x, top: box.top - lean.y, bottom: box.bottom - lean.y };
+        if (Math.max(seen.left - p.x, p.x - seen.right) > 24 || Math.max(seen.top - p.y, p.y - seen.bottom) > 24) letGo(now);
+        else {
+          const dx = (p.x - (seen.left + seen.right) / 2) * 0.32;
+          const dy = (p.y - (seen.top + seen.bottom) / 2) * 0.32;
+          const k = Math.min(1, 12 / Math.hypot(dx, dy));
+          aim = { x: dx * k, y: dy * k };
+          home = null;
+        }
+      }
+    }
+    if (aim) {
+      const share = 1 - Math.exp(-dt / 90);
+      lean = { x: lean.x + (aim.x - lean.x) * share, y: lean.y + (aim.y - lean.y) * share };
+      if (Math.abs(aim.x - lean.x) < 0.05 && Math.abs(aim.y - lean.y) < 0.05) lean = aim;
+    } else if (home) {
+      const t = Math.min(1, (now - home.start) / 900);
+      lean = { x: home.from.x * (1 - boing(t)), y: home.from.y * (1 - boing(t)) };
+      if (t >= 1) home = null;
+    }
+    show();
+    if ((aim && lean !== aim) || home) pulling = requestAnimationFrame(pull);
+    else last = 0;
+  };
+  reduced.addEventListener("change", () => {
+    if (!reduced.matches) return;
+    aim = home = null;
+    lean = { x: 0, y: 0 };
+    show();
+  });
+  // A mouse along the top edge of the window brings the header back to be used; near the button it pulls it.
+  addEventListener("pointermove", (e) => {
+    if (!fine.matches || e.pointerType === "touch") return;
+    header.toggleAttribute("data-peek", e.clientY < 72);
+    if (reduced.matches) return;
+    pointer = { x: e.clientX, y: e.clientY };
+    pulling ||= requestAnimationFrame(pull);
+  }, { passive: true });
+  // Leaving the window lets go of both.
+  document.addEventListener("pointerout", (e) => {
+    if (e.relatedTarget) return;
+    header.removeAttribute("data-peek");
+    pointer = null;
+    letGo(performance.now());
+    pulling ||= requestAnimationFrame(pull);
+  }, { passive: true });
 
-  const dayKey = (d) => d.toISOString().slice(0, 10);
-  const days = []; for (let i = DAYS - 1; i >= 0; i--) days.push(dayKey(new Date(now.getTime() - i * 86400000)));
-  const dayState = (c) => !c || !c.checks ? "none" : c.down ? "down" : c.degraded ? "degraded" : "up";
-  const uptime = (id) => { let checks = 0, down = 0; for (const day of days) { const c = history && history.days && history.days[day] && history.days[day][id]; if (c) { checks += c.checks; down += c.down; } } return checks ? ((checks - down) / checks * 100) : null; };
-
-  const list = document.getElementById("components");
-  if (!status || !status.components || !status.components.length) {
-    list.innerHTML = '<p class="empty">No components have been checked yet.</p>';
-  } else {
-    list.innerHTML = status.components.map((c) => {
-      const up = uptime(c.id);
-      const strip = days.map((day) => '<div class="day ' + dayState(history && history.days && history.days[day] && history.days[day][c.id]) + '" title="' + day + '"></div>').join("");
-      const meta = c.state === "disabled" ? "Not live yet." : [c.httpStatus ? "HTTP " + c.httpStatus : "", c.latencyMs != null ? c.latencyMs + " ms" : "", c.error ? esc(c.error) : "", up != null ? up.toFixed(2) + "% over " + DAYS + " days" : "no history yet"].filter(Boolean).join(" · ");
-      return '<div class="component"><div class="row"><div><div class="name">' + esc(c.name) + '</div>' + (c.description ? '<div class="desc">' + esc(c.description) + '</div>' : "") + '</div><span class="pill ' + c.state + '">' + c.state + '</span></div><div class="meta">' + meta + '</div>' + (c.state === "disabled" ? "" : '<div class="strip">' + strip + '</div><div class="legend"><span>' + DAYS + ' days ago</span><span>today</span></div>') + '</div>';
-    }).join("");
-  }
-
-  const inc = document.getElementById("incidents");
-  if (!incidents || !incidents.length) {
-    inc.innerHTML = '<p class="empty">No incidents recorded.</p>';
-  } else {
-    inc.innerHTML = incidents.map((i) => '<div class="incident ' + (i.status === "resolved" ? "" : "open") + '"><div class="title">' + esc(i.title) + ' <span class="pill ' + (i.status === "resolved" ? "up" : "degraded") + '">' + esc(i.status) + '</span></div><div class="when">' + fmt(i.started) + (i.resolved ? " to " + fmt(i.resolved) : "") + (i.components.length ? " · " + esc(i.components.join(", ")) : "") + '</div><div class="body">' + esc(i.body) + '</div></div>').join("");
-  }
+  // ── Back to the top ──
+  // A glide over 0.7 s on the site's symmetric curve, cubic-bezier(0.6, 0, 0.4, 1) (its own glide,
+  // never the browser's smooth scroll, which Chromium drops when this control hides itself on the
+  // way up and the focus moves); a jump under reduced motion. A wheel, a touch or a key stops it.
+  const curve = (a, b, t) => 3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t;
+  const ease = (p) => {
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 30; i++) {
+      if (curve(0.6, 0.4, (lo + hi) / 2) < p) lo = (lo + hi) / 2;
+      else hi = (lo + hi) / 2;
+    }
+    return curve(0, 1, (lo + hi) / 2);
+  };
+  let glide = 0;
+  const stop = () => cancelAnimationFrame(glide);
+  topButton.addEventListener("click", () => {
+    stop();
+    if (reduced.matches) return scrollTo(0, 0);
+    const from = scrollY;
+    const start = performance.now();
+    const move = (now) => {
+      const p = Math.min(1, (now - start) / 700);
+      scrollTo(0, from * (1 - ease(p)));
+      if (p < 1) glide = requestAnimationFrame(move);
+    };
+    glide = requestAnimationFrame(move);
+  });
+  for (const type of ["wheel", "touchstart", "keydown"]) addEventListener(type, stop, { passive: true });
 })();
+</script>
+
+<script type="module">
+// The page's script: it reads the three files beside it and draws them with the same rules the
+// checks use (lib.mjs, copied here by build.mjs), then keeps them fresh while the page is open.
+import { dayState, daysWithChecks, describeDay, durationText, formatUptime, overallDetail, sinceText, uptimeOf, utcDay } from "./lib.mjs";
+
+const DAYS = 90;
+const root = document.documentElement;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+// Dates assembled from their parts, so every browser writes them the same way ("1 Nov 2026, 9:45 am IST").
+const partsOf = (format, date) => Object.fromEntries(format.formatToParts(date).map(({ type, value }) => [type, value]));
+const IST = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
+const at = (iso) => {
+  const p = partsOf(IST, new Date(iso));
+  return `${p.day} ${p.month} ${p.year}, ${p.hour}:${p.minute} ${(p.dayPeriod ?? "").toLowerCase()} IST`;
+};
+// A strip's day is a UTC day, so it is named in UTC.
+const UTC_DAY = new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const dayName = (key) => {
+  const p = partsOf(UTC_DAY, new Date(`${key}T00:00:00Z`));
+  return `${p.weekday}, ${p.day} ${p.month} ${p.year}`;
+};
+
+const HEADLINE = { up: "All systems normal", degraded: "Slower than usual", down: "Something is down", unknown: "No check yet" };
+const PILLS = { up: ["success", "Up"], degraded: ["warning", "Degraded"], down: ["danger", "Down"], disabled: ["neutral", "Not live yet"] };
+const STAGES = { investigating: ["warning", "Investigating"], identified: ["warning", "Identified"], monitoring: ["brand", "Monitoring"], resolved: ["success", "Resolved"] };
+
+const pill = (tone, words, live) =>
+  `<span class="pill pill-${tone} pill-settle-on${live ? " pill-live" : ""}"><span class="pill-dot" aria-hidden="true"></span>${esc(words)}</span>`;
+
+let data = { status: null, history: { version: 1, days: {} }, incidents: [] };
+
+async function get(name) {
+  try {
+    const res = await fetch(`${name}?t=${Date.now()}`, { cache: "no-store" });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+async function load() {
+  const [status, history, incidents] = await Promise.all([get("status.json"), get("history.json"), get("incidents.json")]);
+  return { status, history: history?.days ? history : { version: 1, days: {} }, incidents: Array.isArray(incidents) ? incidents : [] };
+}
+
+/** The strip ends on the day of the latest check, so it never shows a day no check has reached. */
+const lastCheck = () => (data.status?.generatedAt ? new Date(data.status.generatedAt) : new Date());
+
+function lastDays() {
+  const end = lastCheck().getTime();
+  return Array.from({ length: DAYS }, (_, i) => utcDay(end - (DAYS - 1 - i) * 86_400_000));
+}
+
+function renderHead() {
+  const s = data.status;
+  const checked = $("checked");
+  if (s?.generatedAt) {
+    checked.innerHTML = `Last checked <time datetime="${esc(s.generatedAt)}">${esc(at(s.generatedAt))}</time> · <span id="since">${esc(sinceText(s.generatedAt) ?? "")}</span>`;
+  } else {
+    checked.textContent = "The first check has not run yet.";
+  }
+  const state = HEADLINE[s?.overall] ? s.overall : "unknown";
+  $("overall").dataset.state = state;
+  $("headline").textContent = HEADLINE[state];
+  $("overall-detail").textContent = s?.components?.length ? overallDetail(s.components) : "No check has run yet.";
+  if (s?.checkEveryMinutes) $("every").textContent = String(s.checkEveryMinutes);
+}
+
+function componentCard(c, index, days) {
+  const history = data.history;
+  const counters = (day) => history.days?.[day]?.[c.id];
+  const [tone, words] = PILLS[c.state] ?? PILLS.disabled;
+  const head = `<div class="component-head"><div><h3 class="component-name">${esc(c.name)}</h3>${c.description ? `<p class="component-desc">${esc(c.description)}</p>` : ""}</div>${pill(tone, words, c.state !== "disabled")}</div>`;
+  if (c.state === "disabled") return `<article class="component rise" style="--delay:${index * 70}ms">${head}</article>`;
+
+  const now = lastCheck();
+  const span = daysWithChecks(history, c.id, DAYS, now);
+  const uptime = formatUptime(uptimeOf(history, c.id, DAYS, now));
+  const answer = c.httpStatus ? `HTTP ${c.httpStatus}` : "No answer";
+  // "answered 503" says again what HTTP 503 already says; "slow", "one attempt failed" and "timeout" add something.
+  const reason = c.error && !(c.httpStatus && c.error === `answered ${c.httpStatus}`) ? c.error : "";
+  const answerNote = [c.latencyMs != null ? `${c.latencyMs.toLocaleString("en-IN")} ms` : "", reason].filter(Boolean).join(" · ");
+  const states = days.map((day) => dayState(counters(day)));
+  const bars = days.map((day, i) => `<span class="bar" data-day="${day}" data-state="${states[i]}" style="--i:${i}"></span>`).join("");
+  const downDays = states.filter((s) => s === "down").length;
+  const slowDays = states.filter((s) => s === "degraded").length;
+  const summary = `${span} ${span === 1 ? "day" : "days"} checked, ${downDays ? `${downDays} with downtime` : "none with downtime"}${slowDays ? `, ${slowDays} degraded` : ""}`;
+
+  return `<article class="component rise" style="--delay:${index * 70}ms" data-id="${esc(c.id)}" data-name="${esc(c.name)}">
+    ${head}
+    <dl class="figures">
+      <div class="figure"><dt class="ins-label">Uptime</dt><dd class="ins-figure">${esc(uptime ?? "No data yet")}</dd>${span ? `<dd class="figure-note">over ${span} ${span === 1 ? "day" : "days"}</dd>` : ""}</div>
+      <div class="figure"><dt class="ins-label">Last answer</dt><dd class="ins-figure">${esc(answer)}</dd>${answerNote ? `<dd class="figure-note">${esc(answerNote)}</dd>` : ""}</div>
+    </dl>
+    <div class="strip" tabindex="0" role="group" aria-label="${esc(`${c.name}, the last ${DAYS} days: ${summary}. The arrow keys read one day.`)}">${bars}</div>
+    <div class="strip-foot" aria-hidden="true"><span><span class="ago-90">90 days ago</span><span class="ago-60">60 days ago</span><span class="ago-30">30 days ago</span></span><span>Today</span></div>
+  </article>`;
+}
+
+function incidentCard(i, names) {
+  const [tone, words] = STAGES[i.status] ?? STAGES.investigating;
+  const open = i.status !== "resolved";
+  const time = `${at(i.started)} · ${i.resolved ? `lasted ${durationText(i.started, i.resolved)}` : `started ${sinceText(i.started) ?? ""}`}`;
+  const tags = i.components?.length
+    ? `<ul class="incident-tags" aria-label="Affected">${i.components.map((id) => `<li class="pill pill-neutral">${esc(names[id] ?? id)}</li>`).join("")}</ul>`
+    : "";
+  return `<article class="incident rise${open ? " is-open" : ""}" id="incident-${esc(i.slug)}">
+    <div class="incident-head"><h3 class="incident-title">${esc(i.title)}</h3>${pill(tone, words, open)}</div>
+    <p class="incident-when">${esc(time)}</p>
+    ${tags}
+    ${i.body ? `<div class="incident-body">${esc(i.body)}</div>` : ""}
+  </article>`;
+}
+
+function render() {
+  renderHead();
+  const components = data.status?.components ?? [];
+  const days = lastDays();
+  $("components").innerHTML = components.length
+    ? components.map((c, i) => componentCard(c, i, days)).join("")
+    : `<p class="empty">No components have been checked yet.</p>`;
+
+  const names = Object.fromEntries(components.map((c) => [c.id, c.name]));
+  const open = data.incidents.filter((i) => i.status !== "resolved");
+  const past = data.incidents.filter((i) => i.status === "resolved");
+  const now = $("now");
+  now.hidden = open.length === 0;
+  now.innerHTML = open.map((i) => incidentCard(i, names)).join("");
+  $("incidents").innerHTML = past.length
+    ? past.map((i) => incidentCard(i, names)).join("")
+    : `<p class="empty">${open.length ? "No past incidents recorded." : "No incidents recorded."}</p>`;
+}
+
+function tick() {
+  const since = $("since");
+  if (since && data.status?.generatedAt) since.textContent = sinceText(data.status.generatedAt) ?? "";
+}
+
+/** Fresh results while the page is open: drawn again only when something changed, without the entrances. */
+async function refresh() {
+  const next = await load();
+  if (next.status?.generatedAt === data.status?.generatedAt && JSON.stringify(next.incidents) === JSON.stringify(data.incidents)) return tick();
+  hideDay();
+  root.dataset.settled = "";
+  data = next;
+  render();
+}
+
+// ── Reading one day of a strip: under the pointer, on a tap, or with the arrow keys ──
+const tip = $("tip");
+const live = $("live");
+let active = null;
+
+const shown = (strip) => [...strip.children].filter((bar) => bar.getClientRects().length > 0);
+
+function showDay(bar, announce = false) {
+  if (active && active !== bar) active.classList.remove("is-active");
+  active = bar;
+  bar.classList.add("is-active");
+  const card = bar.closest(".component");
+  const said = describeDay(data.history.days?.[bar.dataset.day]?.[card.dataset.id]);
+  const day = dayName(bar.dataset.day);
+  tip.firstElementChild.textContent = day;
+  tip.lastElementChild.textContent = said;
+  tip.hidden = false;
+  const box = bar.getBoundingClientRect();
+  const left = Math.min(Math.max(8, box.left + box.width / 2 - tip.offsetWidth / 2), innerWidth - tip.offsetWidth - 8);
+  const above = box.top - tip.offsetHeight - 10;
+  tip.style.transform = `translate(${Math.round(left)}px, ${Math.round(above >= 8 ? above : box.bottom + 10)}px)`;
+  if (announce) live.textContent = `${card.dataset.name}, ${day}: ${said}`;
+}
+
+function hideDay() {
+  tip.hidden = true;
+  active?.classList.remove("is-active");
+  active = null;
+}
+
+const list = $("components");
+list.addEventListener("pointerover", (e) => {
+  const bar = e.pointerType === "mouse" && e.target.closest(".bar");
+  if (bar) showDay(bar);
+});
+list.addEventListener("pointerout", (e) => {
+  if (e.pointerType === "mouse" && e.target.closest(".strip") && !e.relatedTarget?.closest?.(".strip")) hideDay();
+});
+list.addEventListener("click", (e) => {
+  const bar = e.target.closest(".bar");
+  if (bar) showDay(bar, true);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest?.(".bar")) hideDay();
+});
+list.addEventListener("focusin", (e) => {
+  // Keyboard focus only: a click focuses the strip too, and it reads the bar it was on.
+  if (!e.target.classList.contains("strip") || !e.target.matches(":focus-visible")) return;
+  const bars = shown(e.target);
+  if (bars.length) showDay(bars.includes(active) ? active : bars[bars.length - 1], true);
+});
+list.addEventListener("focusout", (e) => {
+  if (e.target.classList.contains("strip")) hideDay();
+});
+list.addEventListener("keydown", (e) => {
+  const strip = e.target.closest(".strip");
+  if (!strip) return;
+  if (e.key === "Escape") return hideDay();
+  const bars = shown(strip);
+  const current = bars.indexOf(active);
+  const here = current < 0 ? bars.length - 1 : current;
+  const to = { ArrowLeft: here - 1, ArrowRight: here + 1, Home: 0, End: bars.length - 1 }[e.key];
+  if (to === undefined || !bars.length) return;
+  e.preventDefault();
+  showDay(bars[Math.max(0, Math.min(bars.length - 1, to))], true);
+});
+addEventListener("scroll", () => active && showDay(active), { passive: true });
+addEventListener("resize", hideDay);
+
+// ── Loops rest when the visitor does (the site's 12 s idle) ──
+let idle = 0;
+const wake = () => {
+  delete root.dataset.idle;
+  clearTimeout(idle);
+  idle = setTimeout(() => (root.dataset.idle = ""), 12_000);
+};
+for (const type of ["pointermove", "pointerdown", "keydown", "scroll", "wheel"]) addEventListener(type, wake, { passive: true });
+wake();
+
+// ── The footer's wordmark: it rises as the footer comes in, and a mouse drags a light across it ──
+const mark = document.querySelector(".chrome-wordmark");
+const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (fine && CSS.supports?.("animation-timeline: view()")) {
+    mark.dataset.reveal = "scrub";
+  } else {
+    mark.dataset.reveal = "once";
+    new IntersectionObserver((entries, io) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        mark.dataset.revealed = "";
+        io.disconnect();
+      }
+    }, { threshold: 0.2 }).observe(mark);
+  }
+  if (fine) {
+    const foot = $("footer");
+    foot.addEventListener("pointermove", (e) => {
+      const box = mark.getBoundingClientRect();
+      mark.style.setProperty("--chrome-sweep-x", `${(((e.clientX - box.left) / box.width) * 100).toFixed(1)}%`);
+      mark.style.setProperty("--chrome-sweep-on", "1");
+    });
+    foot.addEventListener("pointerleave", () => mark.style.setProperty("--chrome-sweep-on", "0"));
+  }
+}
+
+$("year").textContent = String(new Date().getFullYear());
+data = await load();
+render();
+setInterval(tick, 60_000);
+setInterval(refresh, 5 * 60_000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") refresh();
+});
 </script>
 </body>
 </html>

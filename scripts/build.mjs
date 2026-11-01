@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Assemble the published folder: the page and its assets, the latest status.json (written by
-// probe.mjs), the history, and the incidents read from incidents/*.md.
+// Assemble the published folder: the page, the rules it imports (lib.mjs) and its assets, the
+// latest status.json (written by probe.mjs), the history, and the incidents read from
+// incidents/*.md.
 //
 //   node scripts/build.mjs --root . --history data/history.json --out site
 //
@@ -20,6 +21,8 @@ const outDir = option("--out", "site");
 
 mkdirSync(outDir, { recursive: true });
 cpSync(join(root, "index.html"), join(outDir, "index.html"));
+// The page's script imports the same rules the checks use, so the two cannot disagree.
+cpSync(join(root, "scripts", "lib.mjs"), join(outDir, "lib.mjs"));
 if (existsSync(join(root, "assets"))) cpSync(join(root, "assets"), join(outDir, "assets"), { recursive: true });
 // GitHub Pages runs Jekyll unless told not to, and Jekyll drops files whose names start with an underscore.
 writeFileSync(join(outDir, ".nojekyll"), "");
