@@ -32,8 +32,10 @@ ORG="${STATUS_ORG:-earndlife}"
 REPO="${STATUS_REPO:-STATUS}"
 REMOTE="${STATUS_REMOTE:-https://github.com/$ORG/$REPO.git}"
 API="https://api.github.com"
-# Pages serves a project under its repository's name, case and all: /STATUS/, not /status/.
-PAGE="https://$ORG.github.io/$REPO/"
+# The page's address: the custom domain in the repository's Pages settings (a CNAME in earnd.life's
+# DNS onto earndlife.github.io, HTTPS enforced). Its github.io address, under the repository's name,
+# case and all (/STATUS/, not /status/), redirects there.
+PAGE="${STATUS_PAGE:-https://status.earnd.life/}"
 CREATE=0
 [ "${1:-}" = "--create" ] && CREATE=1
 
@@ -148,7 +150,7 @@ if [ "$CREATE" = 1 ]; then
   esac
   echo "→ running the first check"
   api -o /dev/null -w '   dispatch: HTTP %{http_code}\n' -X POST "$API/repos/$ORG/$REPO/actions/workflows/status.yml/dispatches" -d '{"ref":"main"}'
-  echo "For status.earnd.life: a CNAME record at Spaceship pointing at $ORG.github.io, then Settings → Pages → Custom domain."
+  echo "Until status.earnd.life is set on it (a CNAME record in earnd.life's DNS pointing at $ORG.github.io, then Settings → Pages → Custom domain and Enforce HTTPS), the page is at https://$ORG.github.io/$REPO/."
 fi
 
 if ! on_github; then

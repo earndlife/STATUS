@@ -20,7 +20,7 @@
     {
       "id": "website-liveness",
       "name": "earnd.life, liveness probe",
-      "description": "The same answer the edge asks the site for every 5 seconds (/healthz).",
+      "description": "A quick check that the site's server is up and answering.",
       "url": "https://earnd.life/healthz",
       "expect": [200],
       "timeoutMs": 10000,
@@ -30,7 +30,7 @@
     {
       "id": "waitlist",
       "name": "Waitlist",
-      "description": "The form's backend: a Supabase function that stores sign-ups and sends the emails. Its health answer is the same one n8n polls daily.",
+      "description": "The service behind the waitlist form: it saves sign-ups and sends the emails.",
       "url": "https://dfjzmcrucdvptpkslulb.supabase.co/functions/v1/waitlist",
       "expect": [200],
       "timeoutMs": 15000,

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Status · Earnd</title>
-<meta name="description" content="Whether earnd.life and the Earnd waitlist are up, checked from GitHub's servers away from Earnd's own, with 90 days of history and every incident.">
+<meta name="description" content="Whether earnd.life and the Earnd waitlist are up, checked from outside Earnd's own servers, with 90 days of history and every incident.">
 <meta name="theme-color" content="#0B0B0C">
 <meta name="color-scheme" content="dark">
 <meta property="og:type" content="website">
@@ -858,8 +858,6 @@
 
   .legend dt { line-height: 0; }
 
-  .link { color: var(--ds-color-accent-mint); }
-
   /* fx-underline-draw (the site's fx.css): a gradient underline that draws in on hover and focus. */
   .fx-underline-draw {
     background-image:
@@ -1297,7 +1295,7 @@
 -->
 <header class="chrome-header">
   <div class="chrome-bar">
-    <a class="chrome-logo" href="https://earnd.life" aria-label="Earnd home">
+    <a class="chrome-logo" href="https://earnd.life" target="_blank" rel="noopener" aria-label="Earnd home (opens in a new tab)">
       <img class="chrome-logo-mark" src="assets/earnd-mark-on-dark.svg" alt="" width="30" height="36">
       <span class="chrome-logo-word">Earnd</span>
     </a>
@@ -1354,17 +1352,17 @@
         </div>
       </dl>
       <p>Uptime is the share of checks that were not down. Degraded counts as up, because slow is not out. Each bar is one day, in UTC; times on this page are in IST.</p>
-      <p>The checks are scheduled every <span id="every">30</span> minutes and run on GitHub's servers, not Earnd's own, so this page stays up when the site does not. GitHub sometimes runs a scheduled check later than planned.</p>
+      <p>The checks are scheduled every <span id="every">30</span> minutes and run outside Earnd's own servers, so this page stays up when the site does not. A scheduled check sometimes runs later than planned.</p>
     </div>
   </section>
 
-  <noscript><p class="empty">This page needs JavaScript to read the latest check. The raw data is in <a class="link" href="status.json">status.json</a>, <a class="link" href="history.json">history.json</a> and <a class="link" href="incidents.json">incidents.json</a>.</p></noscript>
+  <noscript><p class="empty">This page needs JavaScript to read the latest check.</p></noscript>
 </main>
 
 <footer class="site-footer" id="footer">
   <hr class="rule">
   <div class="container footer-inner">
-    <a class="chrome-logo" href="https://earnd.life" aria-label="Earnd home">
+    <a class="chrome-logo" href="https://earnd.life" target="_blank" rel="noopener" aria-label="Earnd home (opens in a new tab)">
       <img class="chrome-logo-mark" src="assets/earnd-mark-on-dark.svg" alt="" width="30" height="36">
       <span class="chrome-logo-word">Earnd</span>
     </a>

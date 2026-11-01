@@ -2,7 +2,7 @@
 
 A public page that says whether earnd.life and the waitlist are up, checked on a schedule
 **from GitHub's servers, not Earnd's own box**, with 90 days of history per component and every
-incident written for readers. It lives at https://earndlife.github.io/STATUS/.
+incident written for readers. It lives at https://status.earnd.life/.
 
 Everything in this folder is public the moment it is published, and it is live before the site
 says everything it will. So it names only what earnd.life already shows: a component joins the
@@ -68,8 +68,9 @@ checked, and its "How this page works" section says the schedule is not exact. A
    it by hand: repository **Settings → Pages → Source: GitHub Actions**.
 2. Open `https://earndlife.github.io/STATUS/` a few minutes later. Pages serves a repository under
    its own name, case and all: `/status/` is a 404.
-3. Optional, `status.earnd.life`: a `CNAME` record at Spaceship pointing at `earndlife.github.io`,
-   then **Settings → Pages → Custom domain**.
+3. `status.earnd.life`: a `CNAME` record in earnd.life's DNS pointing at `earndlife.github.io`, then
+   **Settings → Pages → Custom domain** and **Enforce HTTPS** (both set; HTTPS enforced since
+   2026-11-01). The github.io address now redirects there.
 4. The waitlist's address in `components.json` is the function's public URL (the same one the
    site's bundle carries).
 
