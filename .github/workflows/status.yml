@@ -5,7 +5,8 @@
 # runs"); a push to main, a publish or an incident, runs it at once.
 #
 # History lives on the `data` branch, one small JSON file rewritten each run, so `main` holds only
-# the page and its scripts. Pages is deployed from the artifact, never from a branch.
+# the page and its scripts. Pages is deployed from the artifact, never from a branch, and a deploy
+# that cannot find the artifact just uploaded is tried once more a minute later (below).
 name: Status
 
 on:
@@ -30,13 +31,15 @@ jobs:
     timeout-minutes: 10
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy-again.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      # v5, not later: v6 keeps the token in a separate file, and the history step below pushes
+      # from a git worktree, which that file may not reach.
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Restore the history (the data branch)
         run: |
@@ -70,11 +73,27 @@ jobs:
       - name: Build the page
         run: node scripts/build.mjs --root . --history data/history.json --out site
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
+          # build.mjs writes site/.nojekyll; since v4 a dotfile is left out unless asked for.
+          include-hidden-files: true
 
+      # GitHub sometimes cannot find the artifact the step above has just stored ("No artifacts
+      # named github-pages were found ... Is githubstatus.com reporting issues"): three of the five
+      # runs from 23 to 25 November 2026 stopped there, after probing and keeping the history, so
+      # the page showed a check 26 hours old. The first try may fail; a minute later the same
+      # artifact is asked for again, and only that second try can fail the run.
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+
+      - name: Wait a minute before deploying again
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 60
+
+      - id: deploy-again
+        if: steps.deploy.outcome == 'failure'
+        uses: actions/deploy-pages@v5

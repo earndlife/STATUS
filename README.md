@@ -60,6 +60,11 @@ when it is busy: in October 2026 the runs came every 3 to 7 hours. The page says
 checked, and its "How this page works" section says the schedule is not exact. A push to `main`
 (a publish, an incident) runs it at once, and so does **Actions → Status → Run workflow**.
 
+A run can fail at its last step, the deploy to Pages, when GitHub cannot yet find the page it has
+just uploaded ("No artifacts named github-pages were found"): three of the five runs from 23 to
+25 November 2026 did, so the page showed a check 26 hours old while the history kept growing.
+Since 2026-11-26 the deploy tries once more a minute later, and only that second try fails the run.
+
 ## Owner steps, once (done 2026-10-20)
 
 1. `bash status/publish.sh --create` from the website checkout. It creates the public repository
